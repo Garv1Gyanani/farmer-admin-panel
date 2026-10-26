@@ -274,7 +274,7 @@ const AdminApp = () => {
       case 'agents':
         return 'Field Agent & Coverage Network';
       case 'providers':
-        return 'Machinery Fleets & Operators';
+        return 'Service Provider Management & Fleets';
       case 'bookings':
         return 'Field Operations Dispatch Cockpit';
       case 'finance':
@@ -292,6 +292,9 @@ const AdminApp = () => {
 
   const pendingQueueCount = queueData?.counts?.total || 0;
   const pendingPayoutCount = payouts.filter((p) => p.status === 'pending').length;
+  const pendingProvidersCount = providers.filter(
+    (p) => p.kycStatus === 'pending' || p.status === 'pending_verification'
+  ).length;
 
   return (
     <div className="app-container">
@@ -303,6 +306,7 @@ const AdminApp = () => {
         }}
         pendingQueueCount={pendingQueueCount}
         pendingPayoutCount={pendingPayoutCount}
+        pendingProvidersCount={pendingProvidersCount}
         onOpenAdminProfile={() => setIsAdminProfileOpen(true)}
       />
 
@@ -361,6 +365,7 @@ const AdminApp = () => {
             <ProvidersView
               providers={providers}
               onToggleUserStatus={handleToggleUserStatus}
+              onProcessVerification={handleProcessVerification}
               onRefreshData={fetchAllData}
             />
           )}

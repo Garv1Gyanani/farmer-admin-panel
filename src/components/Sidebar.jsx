@@ -21,6 +21,7 @@ export const Sidebar = ({
   onViewChange,
   pendingQueueCount = 0,
   pendingPayoutCount = 0,
+  pendingProvidersCount = 0,
   onOpenAdminProfile,
 }) => {
   const { admin, logout } = useAuth();
@@ -37,7 +38,13 @@ export const Sidebar = ({
     },
     { id: 'farmers', label: 'Farmer Management', icon: Users },
     { id: 'agents', label: 'Field Agent Network', icon: Briefcase },
-    { id: 'providers', label: 'Fleet & Providers', icon: Tractor },
+    {
+      id: 'providers',
+      label: 'Service Provider Management',
+      icon: Tractor,
+      badge: pendingProvidersCount > 0 ? pendingProvidersCount : null,
+      badgeColor: 'warning',
+    },
     { id: 'bookings', label: 'Bookings & Dispatch', icon: CalendarCheck },
     {
       id: 'finance',

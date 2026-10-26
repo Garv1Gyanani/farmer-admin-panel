@@ -14,11 +14,20 @@ import {
   Plus,
   Edit2,
   UserPlus,
+  ExternalLink,
+  FileText,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { apiFetch } from '../api';
 
-export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshData }) => {
+export const ProvidersView = ({
+  providers = [],
+  onToggleUserStatus,
+  onProcessVerification,
+  onRefreshData,
+}) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -116,15 +125,22 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
     }
   };
 
+  const pendingCount = providers.filter(
+    (p) => p.kycStatus === 'pending' || p.status === 'pending_verification'
+  ).length;
+
   const filteredProviders = providers.filter((p) => {
     const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.enterpriseName?.toLowerCase().includes(search.toLowerCase()) ||
-      p.contractorId?.toLowerCase().includes(search.toLowerCase());
+      p.contractorId?.toLowerCase().includes(search.toLowerCase()) ||
+      p.phone?.includes(search);
 
     let matchesStatus = true;
     if (statusFilter === 'online') {
       matchesStatus = Boolean(p.isOnline);
+    } else if (statusFilter === 'pending') {
+      matchesStatus = p.kycStatus === 'pending' || p.status === 'pending_verification';
     } else if (statusFilter !== 'all') {
       matchesStatus = p.status === statusFilter;
     }
@@ -155,7 +171,8 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">All Fleets ({providers.length})</option>
+              <option value="all">All Service Providers ({providers.length})</option>
+              <option value="pending">Pending Review / KYC ({pendingCount})</option>
               <option value="online">Online / Ready Only</option>
               <option value="active">Active Accounts</option>
               <option value="suspended">Suspended Accounts</option>
@@ -282,14 +299,34 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {(p.kycStatus === 'pending' || p.status === 'pending_verification') && (
+                        <button
+                          onClick={() => setSelectedProvider(p)}
+                          className="btn btn-sm"
+                          style={{
+                            backgroundColor: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fde68a',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Review & Verify Submitted KYC Dossier"
+                        >
+                          <Shield size={13} />
+                          <span>Review</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setSelectedProvider(p)}
                         className="btn btn-secondary btn-sm"
                         title="View Machinery Fleet & Revenue Dossier"
                       >
                         <Eye size={13} />
-                        <span>Fleet</span>
+                        <span>Dossier</span>
                       </button>
 
                       <button
@@ -326,25 +363,100 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
         </div>
       </div>
 
-      {/* Fleet Dossier Modal */}
+      {/* Fleet & KYC Review Dossier Modal */}
       {selectedProvider && (
         <Modal
           isOpen={Boolean(selectedProvider)}
           onClose={() => setSelectedProvider(null)}
-          title={`Machinery Fleet Dossier — ${selectedProvider.enterpriseName}`}
-          maxWidth="700px"
+          title={`Provider Review & Dossier — ${selectedProvider.enterpriseName || selectedProvider.name}`}
+          maxWidth="750px"
           footer={
-            <button onClick={() => setSelectedProvider(null)} className="btn btn-secondary">
-              Close
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <div>
+                {onProcessVerification && (selectedProvider.kycStatus === 'pending' || selectedProvider.status === 'pending_verification') && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm(`Approve verification for ${selectedProvider.enterpriseName || selectedProvider.name}?`)) {
+                          await onProcessVerification('provider', selectedProvider._id, 'approve');
+                          setSelectedProvider(null);
+                          if (onRefreshData) onRefreshData();
+                        }
+                      }}
+                      className="btn btn-primary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+                    >
+                      <CheckCircle size={15} />
+                      <span>Approve Provider</span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        const reason = window.prompt('Enter reason for requesting additional changes / rejection:');
+                        if (reason) {
+                          await onProcessVerification('provider', selectedProvider._id, 'action_needed', reason);
+                          setSelectedProvider(null);
+                          if (onRefreshData) onRefreshData();
+                        }
+                      }}
+                      className="btn btn-danger"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+                    >
+                      <XCircle size={15} />
+                      <span>Request Changes</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setSelectedProvider(null)} className="btn btn-secondary">
+                Close
+              </button>
+            </div>
           }
         >
           <div>
-            {/* Quick Metrics */}
+            {/* Enterprise & Proprietor Overview Header */}
             <div
               style={{
                 backgroundColor: 'var(--surface)',
                 padding: '16px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px',
+                fontSize: '13px',
+              }}
+            >
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Contractor & Enterprise</span>
+                <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedProvider.enterpriseName}</strong>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#0369a1', marginTop: '2px' }}>
+                  ID: {selectedProvider.contractorId}
+                </div>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Proprietor & Contact</span>
+                <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedProvider.name}</strong>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {selectedProvider.phone} {selectedProvider.email ? `• ${selectedProvider.email}` : ''}
+                </div>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Primary Category</span>
+                <span style={{ fontWeight: 600 }}>{selectedProvider.primaryCategory || 'Harvesting & Mechanization'}</span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Operational Coverage</span>
+                <span style={{ fontWeight: 600 }}>{selectedProvider.coverageRadiusKm || 25} KM Radius</span>
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '14px',
                 borderRadius: '8px',
                 marginBottom: '20px',
                 display: 'grid',
@@ -355,28 +467,92 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
             >
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Jobs Completed</div>
-                <div style={{ fontSize: '18px', fontWeight: 800 }}>
+                <div style={{ fontSize: '16px', fontWeight: 800 }}>
                   {selectedProvider.metrics?.completedJobs || 0}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Acreage Worked</div>
-                <div style={{ fontSize: '18px', fontWeight: 800 }}>
+                <div style={{ fontSize: '16px', fontWeight: 800 }}>
                   {selectedProvider.metrics?.totalAcreageWorked || 0} Ac
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Customer Rating</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#b7791f' }}>
-                  ★ {selectedProvider.metrics?.rating || 4.9}
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>KYC Status</div>
+                <div style={{ fontSize: '13px', fontWeight: 800, marginTop: '2px' }}>
+                  <span className={`status-pill ${selectedProvider.kycStatus === 'approved' ? 'active' : 'pending'}`}>
+                    {selectedProvider.kycStatus?.toUpperCase() || 'PENDING'}
+                  </span>
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Wallet Balance</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)' }}>
                   ₹{selectedProvider.availableBalance?.toLocaleString() || 0}
                 </div>
               </div>
+            </div>
+
+            {/* Submitted Verification & KYC Documents section */}
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FileText size={16} color="var(--primary)" />
+                <span>Submitted Verification Documents ({selectedProvider.kycDocuments?.length || 0})</span>
+              </h4>
+
+              {(!selectedProvider.kycDocuments || selectedProvider.kycDocuments.length === 0) ? (
+                <div style={{ padding: '14px', backgroundColor: 'var(--surface)', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  No verification documents uploaded yet (Operator skipped or pending upload).
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {selectedProvider.kycDocuments.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        border: '1px solid var(--border-color)',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        backgroundColor: 'var(--surface)',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '13.5px' }}>
+                          {doc.title || doc.type?.replace(/_/g, ' ').toUpperCase()}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Type: <strong style={{ textTransform: 'capitalize' }}>{doc.type?.replace(/_/g, ' ')}</strong> • Uploaded:{' '}
+                          {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Recent'}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className={`status-pill ${doc.status === 'approved' ? 'active' : 'pending'}`} style={{ fontSize: '11px' }}>
+                          {doc.status?.toUpperCase() || 'PENDING'}
+                        </span>
+
+                        {doc.fileUrl && (
+                          <a
+                            href={doc.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            <ExternalLink size={12} />
+                            <span>View Document</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Machinery Fleet Listing */}
@@ -387,37 +563,43 @@ export const ProvidersView = ({ providers = [], onToggleUserStatus, onRefreshDat
               </h4>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {(selectedProvider.machineryFleet || []).map((m, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      border: '1px solid var(--border-color)',
-                      padding: '12px 14px',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontSize: '13px',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px' }}>
-                        {m.brand} {m.model} ({m.machineryType})
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Reg: <strong style={{ fontFamily: 'var(--font-mono)' }}>{m.registrationNumber}</strong> • {m.horsepowerHp} HP • Year: {m.yearOfManufacture || '2023'}
-                      </div>
-                    </div>
-                    <div>
-                      <span
-                        className={`status-pill ${m.isOperational ? 'active' : 'urgent'}`}
-                        style={{ fontSize: '11px' }}
-                      >
-                        {m.isOperational ? 'Operational' : 'Maintenance'}
-                      </span>
-                    </div>
+                {(!selectedProvider.machineryFleet || selectedProvider.machineryFleet.length === 0) ? (
+                  <div style={{ padding: '14px', backgroundColor: 'var(--surface)', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    No machinery units registered yet.
                   </div>
-                ))}
+                ) : (
+                  selectedProvider.machineryFleet.map((m, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        border: '1px solid var(--border-color)',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '13px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '14px' }}>
+                          {m.brand ? `${m.brand} ` : ''}{m.model} ({m.machineryType})
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Reg: <strong style={{ fontFamily: 'var(--font-mono)' }}>{m.regPlateNumber || m.registrationNumber || 'N/A'}</strong> • {m.horsepower || m.horsepowerHp || 55} HP • Year: {m.year || m.yearOfManufacture || '2023'}
+                        </div>
+                      </div>
+                      <div>
+                        <span
+                          className={`status-pill ${m.isAvailable !== false ? 'active' : 'urgent'}`}
+                          style={{ fontSize: '11px' }}
+                        >
+                          {m.isAvailable !== false ? 'Operational' : 'Maintenance'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
