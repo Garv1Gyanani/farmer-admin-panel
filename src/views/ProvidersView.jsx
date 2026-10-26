@@ -242,17 +242,21 @@ export const ProvidersView = ({
                       >
                         {p.contractorId}
                       </span>
-                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>
                         {p.enterpriseName}
                       </span>
                     </div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      Proprietor: {p.name}
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <strong>Proprietor:</strong> {p.name}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, marginTop: '1px' }}>
+                      {p.primaryCategory || 'Land Preparation & Tillage'}
                     </div>
                   </td>
                   <td>
-                    <div style={{ fontFamily: 'var(--font-mono)' }}>{p.phone}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Radius: {p.coverageRadiusKm} KM</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{p.phone}</div>
+                    {p.email && <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{p.email}</div>}
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Radius: {p.coverageRadiusKm || 25} KM</div>
                   </td>
                   <td>
                     {p.isOnline ? (
@@ -445,25 +449,37 @@ export const ProvidersView = ({
             >
               <div>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Contractor & Enterprise</span>
-                <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{reviewProvider.enterpriseName}</strong>
+                <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{reviewProvider.enterpriseName}</strong>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#0369a1', marginTop: '2px' }}>
                   ID: {reviewProvider.contractorId}
                 </div>
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Proprietor & Contact</span>
-                <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{reviewProvider.name}</strong>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{reviewProvider.name}</strong>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   {reviewProvider.phone} {reviewProvider.email ? `• ${reviewProvider.email}` : ''}
                 </div>
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Primary Category</span>
-                <span style={{ fontWeight: 600 }}>{reviewProvider.primaryCategory || 'Harvesting & Mechanization'}</span>
+                <span style={{ fontWeight: 600, color: '#16a34a' }}>{reviewProvider.primaryCategory || 'Land Preparation & Tillage'}</span>
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Operational Coverage</span>
                 <span style={{ fontWeight: 600 }}>{reviewProvider.coverageRadiusKm || 25} KM Radius</span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Registration / Submission Date</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  {reviewProvider.createdAt ? new Date(reviewProvider.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                </span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Account Verification</span>
+                <span className={`status-pill ${reviewProvider.kycStatus === 'approved' ? 'active' : 'pending'}`} style={{ display: 'inline-block', marginTop: '2px' }}>
+                  {reviewProvider.kycStatus?.toUpperCase() || 'PENDING'}
+                </span>
               </div>
             </div>
 
