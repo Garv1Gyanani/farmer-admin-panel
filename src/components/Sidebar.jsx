@@ -99,9 +99,12 @@ export const Sidebar = ({
             }
             alt={admin?.name}
             className="user-avatar"
+            style={{ flexShrink: 0 }}
           />
           <div className="user-info">
-            <div className="user-name">{admin?.name || 'Administrator'}</div>
+            <div className="user-name" title={admin?.name || 'Administrator'}>
+              {admin?.name || 'Administrator'}
+            </div>
             <span className="user-role-badge">Super Admin</span>
           </div>
           <button

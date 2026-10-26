@@ -172,7 +172,9 @@ export const DashboardView = ({ data, onNavigate }) => {
             marginBottom: '24px',
             background: 'linear-gradient(135deg, #02200c 0%, #17351f 100%)',
             color: '#ffffff',
-            borderRadius: '10px',
+            borderRadius: '12px',
+            border: '1px solid rgba(200, 236, 203, 0.25)',
+            boxShadow: '0 8px 24px rgba(2, 32, 12, 0.2)',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '14px' }}>
