@@ -365,6 +365,7 @@ const AdminApp = () => {
               farmers={farmers}
               agents={agents}
               bookings={bookings}
+              searchQuery={searchQuery}
               onToggleUserStatus={handleToggleUserStatus}
               onRefreshData={fetchAllData}
             />

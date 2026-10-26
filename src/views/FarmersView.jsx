@@ -32,22 +32,28 @@ import {
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { SoilReportModal } from '../components/SoilReportModal';
+import { FarmerDetailsView } from './FarmerDetailsView';
 import { apiFetch } from '../api';
 
 export const FarmersView = ({
   farmers = [],
   agents = [],
   bookings = [],
+  searchQuery = '',
   onToggleUserStatus,
   onRefreshData,
 }) => {
-  const [search, setSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('all');
   const [kycFilter, setKycFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
 
-  // Modals
+  // Sync effective search term
+  const effectiveSearch = (searchQuery || localSearch || '').trim().toLowerCase();
+
+  // Modals & Navigation
+  const [activeFarmerId, setActiveFarmerId] = useState(null);
   const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [dossierData, setDossierData] = useState(null);
   const [isDossierLoading, setIsDossierLoading] = useState(false);
@@ -100,11 +106,19 @@ export const FarmersView = ({
 
   // Filter Farmers
   const filteredFarmers = farmers.filter((f) => {
+    const fName = (f.name || '').toLowerCase();
+    const fPhone = (f.phone || '').toLowerCase();
+    const fVillage = (f.village || '').toLowerCase();
+    const fFarm = (f.farmName || '').toLowerCase();
+    const fEmail = (f.email || '').toLowerCase();
+
     const matchesSearch =
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      f.phone.includes(search) ||
-      (f.village && f.village.toLowerCase().includes(search.toLowerCase())) ||
-      (f.farmName && f.farmName.toLowerCase().includes(search.toLowerCase()));
+      !effectiveSearch ||
+      fName.includes(effectiveSearch) ||
+      fPhone.includes(effectiveSearch) ||
+      fVillage.includes(effectiveSearch) ||
+      fFarm.includes(effectiveSearch) ||
+      fEmail.includes(effectiveSearch);
 
     const matchesDistrict = districtFilter === 'all' || f.district === districtFilter;
     const matchesKyc = kycFilter === 'all' || f.kycStatus === kycFilter;
@@ -113,30 +127,10 @@ export const FarmersView = ({
     return matchesSearch && matchesDistrict && matchesKyc && matchesStatus;
   });
 
-  // Open 360 Dossier
-  const handleOpenDossier = async (farmer) => {
+  // Open 360 Dossier - Dedicated Separate Page
+  const handleOpenDossier = (farmer) => {
+    setActiveFarmerId(farmer._id);
     setSelectedFarmer(farmer);
-    setDossierTab('overview');
-    setIsDossierLoading(true);
-    try {
-      const res = await apiFetch(`/api/admin/farmers/${farmer._id}/dossier`);
-      if (res && res.dossier) {
-        setDossierData(res.dossier);
-      }
-    } catch (err) {
-      console.warn('Failed to load dossier:', err);
-      // Fallback to basic farmer info
-      setDossierData({
-        user: farmer,
-        profile: farmer,
-        wallet: { balance: farmer.walletBalance || 0 },
-        transactions: [],
-        bookings: bookings.filter((b) => (b.farmerId?._id || b.farmerId) === farmer._id),
-        soilReports: [],
-      });
-    } finally {
-      setIsDossierLoading(false);
-    }
   };
 
   // Open Onboard Modal
@@ -310,6 +304,22 @@ export const FarmersView = ({
     }
   };
 
+  // If a farmer is selected, render the dedicated separate page for all details
+  if (activeFarmerId) {
+    const currentFarmer = farmers.find((f) => f._id === activeFarmerId) || selectedFarmer;
+    return (
+      <FarmerDetailsView
+        farmerId={activeFarmerId}
+        initialFarmer={currentFarmer}
+        bookings={bookings}
+        onBack={() => setActiveFarmerId(null)}
+        onRefreshData={onRefreshData}
+        onOpenEdit={(f) => handleOpenEdit(f)}
+        onOpenCredit={(f) => handleOpenCredit(f)}
+      />
+    );
+  }
+
   return (
     <div>
       {/* 1. Hero KPI Metric Cards */}
@@ -419,8 +429,8 @@ export const FarmersView = ({
               className="form-control"
               placeholder="Search by farmer name, phone (+91), village, or farm..."
               style={{ paddingLeft: '36px', height: '40px', fontSize: '13px' }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
             />
           </div>
 
@@ -542,9 +552,28 @@ export const FarmersView = ({
                           {f.name ? f.name.charAt(0).toUpperCase() : 'G'}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px', whiteSpace: 'nowrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDossier(f)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              margin: 0,
+                              fontWeight: 700,
+                              color: 'var(--text-primary)',
+                              fontSize: '13.5px',
+                              whiteSpace: 'nowrap',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              display: 'block',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                            title="Click to view full farmer details page"
+                          >
                             {f.name}
-                          </div>
+                          </button>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap' }}>
                             Joined {new Date(f.createdAt || Date.now()).toLocaleDateString('en-IN')}
                           </div>
