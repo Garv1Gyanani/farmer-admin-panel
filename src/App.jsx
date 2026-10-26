@@ -67,7 +67,7 @@ const AdminApp = () => {
         apiFetch('/api/admin/bookings').catch(() => ({ bookings: [] })),
         apiFetch('/api/admin/payouts').catch(() => ({ payouts: [] })),
         apiFetch('/api/admin/transactions').catch(() => ({ transactions: [] })),
-        apiFetch('/api/services').catch(() => ({ services: [] })),
+        apiFetch('/api/services?all=true').catch(() => ({ services: [] })),
         apiFetch('/api/services/categories').catch(() => ({ categories: [] })),
         apiFetch('/api/admin/audit-logs').catch(() => ({ logs: [] })),
         apiFetch('/api/admin/commissions').catch(() => ({ commissions: [] })),
@@ -236,6 +236,21 @@ const AdminApp = () => {
     }
   };
 
+  const handleReviewServiceApproval = async (serviceId, approvalStatus, rejectionReason) => {
+    setIsProcessing(true);
+    try {
+      await apiFetch(`/api/admin/services/${serviceId}/approval`, {
+        method: 'PUT',
+        body: JSON.stringify({ approvalStatus, rejectionReason }),
+      });
+      await fetchAllData();
+    } catch (err) {
+      alert(`Review service failed: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -295,6 +310,7 @@ const AdminApp = () => {
   const pendingProvidersCount = providers.filter(
     (p) => p.kycStatus === 'pending' || p.status === 'pending_verification'
   ).length;
+  const pendingServicesCount = services.filter((s) => s.approvalStatus === 'pending').length;
 
   return (
     <div className="app-container">
@@ -307,6 +323,7 @@ const AdminApp = () => {
         pendingQueueCount={pendingQueueCount}
         pendingPayoutCount={pendingPayoutCount}
         pendingProvidersCount={pendingProvidersCount}
+        pendingServicesCount={pendingServicesCount}
         onOpenAdminProfile={() => setIsAdminProfileOpen(true)}
       />
 
@@ -392,6 +409,7 @@ const AdminApp = () => {
               categories={categories}
               onSaveService={handleSaveService}
               onDeleteService={handleDeleteService}
+              onReviewApproval={handleReviewServiceApproval}
               isProcessing={isProcessing}
             />
           )}

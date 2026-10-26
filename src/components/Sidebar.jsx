@@ -22,6 +22,7 @@ export const Sidebar = ({
   pendingQueueCount = 0,
   pendingPayoutCount = 0,
   pendingProvidersCount = 0,
+  pendingServicesCount = 0,
   onOpenAdminProfile,
 }) => {
   const { admin, logout } = useAuth();
@@ -52,7 +53,13 @@ export const Sidebar = ({
       icon: Wallet,
       badge: pendingPayoutCount > 0 ? pendingPayoutCount : null,
     },
-    { id: 'services', label: 'Service Catalog', icon: Layers },
+    {
+      id: 'services',
+      label: 'Service Catalog',
+      icon: Layers,
+      badge: pendingServicesCount > 0 ? pendingServicesCount : null,
+      badgeColor: 'warning',
+    },
     { id: 'categories', label: 'Service Categories', icon: FolderTree },
     { id: 'audit', label: 'Audit Logs', icon: ScrollText },
   ];

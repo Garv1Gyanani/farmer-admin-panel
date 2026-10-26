@@ -25,12 +25,14 @@ export const ServicesView = ({
   categories = [],
   onSaveService,
   onDeleteService,
+  onReviewApproval,
   isProcessing = false,
 }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
   const [pricingModelFilter, setPricingModelFilter] = useState('all');
+  const [approvalFilter, setApprovalFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'price_asc' | 'price_desc' | 'rating'
 
@@ -42,6 +44,19 @@ export const ServicesView = ({
   const handleOpenEdit = (s) => {
     setSelectedService(s);
     setIsModalOpen(true);
+  };
+
+  const handleApprove = (s) => {
+    if (onReviewApproval) {
+      onReviewApproval(s._id, 'approved');
+    }
+  };
+
+  const handleReject = (s) => {
+    const reason = window.prompt(`Enter rejection reason for "${s.title}":`, 'Service details or pricing require revision');
+    if (reason !== null && onReviewApproval) {
+      onReviewApproval(s._id, 'rejected', reason);
+    }
   };
 
   // Filter & Sort
@@ -61,13 +76,20 @@ export const ServicesView = ({
       const matchesPricing =
         pricingModelFilter === 'all' || s.pricingModel === pricingModelFilter;
 
-      return matchesSearch && matchesCategory && matchesPricing;
+      const matchesApproval =
+        approvalFilter === 'all' ||
+        (approvalFilter === 'approved' && (s.approvalStatus === 'approved' || !s.approvalStatus)) ||
+        s.approvalStatus === approvalFilter;
+
+      return matchesSearch && matchesCategory && matchesPricing && matchesApproval;
     })
     .sort((a, b) => {
       if (sortBy === 'price_asc') return (a.basePrice || 0) - (b.basePrice || 0);
       if (sortBy === 'price_desc') return (b.basePrice || 0) - (a.basePrice || 0);
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-      // default: featured first
+      // default: pending review first, then featured
+      if (a.approvalStatus === 'pending' && b.approvalStatus !== 'pending') return -1;
+      if (a.approvalStatus !== 'pending' && b.approvalStatus === 'pending') return 1;
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
       return 0;
@@ -75,7 +97,8 @@ export const ServicesView = ({
 
   // Calculate Metrics
   const totalServices = services.length;
-  const activeServices = services.filter((s) => s.isActive !== false).length;
+  const pendingReviewCount = services.filter((s) => s.approvalStatus === 'pending').length;
+  const activeServices = services.filter((s) => (s.approvalStatus === 'approved' || !s.approvalStatus) && s.isActive !== false).length;
   const featuredServices = services.filter((s) => s.isFeatured).length;
   const avgPrice =
     totalServices > 0
@@ -130,24 +153,41 @@ export const ServicesView = ({
           </div>
         </div>
 
-        <div className="card" style={{ padding: '18px 20px', margin: 0, display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div
+          className="card"
+          onClick={() => setApprovalFilter('pending')}
+          style={{
+            padding: '18px 20px',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            cursor: 'pointer',
+            border: pendingReviewCount > 0 ? '1.5px solid #f59e0b' : '1px solid var(--border-light)',
+            backgroundColor: pendingReviewCount > 0 ? '#fffbeb' : 'var(--surface-card)',
+          }}
+        >
           <div
             style={{
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #b45309, #f59e0b)',
+              background: pendingReviewCount > 0 ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--surface-sunken)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
+              color: pendingReviewCount > 0 ? '#ffffff' : 'var(--text-muted)',
             }}
           >
-            <Sparkles size={24} />
+            <Clock size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Featured Top Picks</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#b45309' }}>{featuredServices}</div>
+            <div style={{ fontSize: '12px', color: pendingReviewCount > 0 ? '#b45309' : 'var(--text-muted)', fontWeight: 600 }}>
+              Pending Provider Review
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: pendingReviewCount > 0 ? '#d97706' : 'var(--text-primary)' }}>
+              {pendingReviewCount}
+            </div>
           </div>
         </div>
 
@@ -181,7 +221,7 @@ export const ServicesView = ({
               Agricultural Mechanization & Service Catalog
             </div>
             <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-              Create and manage dynamic farm services, equipment specifications, pricing benchmarks, and provider assignments
+              Review provider submitted services, configure farm machinery catalog, benchmark pricing, and publish to farmers
             </div>
           </div>
 
@@ -212,14 +252,51 @@ export const ServicesView = ({
           </div>
         </div>
 
+        {/* Approval Tabs */}
+        <div style={{ display: 'flex', gap: '8px', paddingBottom: '12px', borderBottom: '1px solid var(--border-light)', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setApprovalFilter('all')}
+            className={`btn btn-sm ${approvalFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ fontSize: '12px', borderRadius: '8px' }}
+          >
+            All Services ({totalServices})
+          </button>
+          <button
+            onClick={() => setApprovalFilter('pending')}
+            className={`btn btn-sm ${approvalFilter === 'pending' ? 'btn-warning' : 'btn-secondary'}`}
+            style={{
+              fontSize: '12px',
+              borderRadius: '8px',
+              backgroundColor: approvalFilter === 'pending' ? '#f59e0b' : undefined,
+              color: approvalFilter === 'pending' ? '#ffffff' : undefined,
+            }}
+          >
+            ⏳ Pending Review ({pendingReviewCount})
+          </button>
+          <button
+            onClick={() => setApprovalFilter('approved')}
+            className={`btn btn-sm ${approvalFilter === 'approved' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ fontSize: '12px', borderRadius: '8px' }}
+          >
+            ✓ Approved ({activeServices})
+          </button>
+          <button
+            onClick={() => setApprovalFilter('rejected')}
+            className={`btn btn-sm ${approvalFilter === 'rejected' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ fontSize: '12px', borderRadius: '8px' }}
+          >
+            ✕ Rejected ({services.filter((s) => s.approvalStatus === 'rejected').length})
+          </button>
+        </div>
+
         {/* Category Filter Chips */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
           <button
             onClick={() => setSelectedCategoryFilter('all')}
             className={`btn btn-sm ${selectedCategoryFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             style={{ fontSize: '12px', borderRadius: '20px', whiteSpace: 'nowrap' }}
           >
-            All Machinery ({services.length})
+            All Categories
           </button>
           {categories.map((c) => {
             const count = services.filter((s) => (s.category?._id || s.category) === c._id).length;
@@ -275,24 +352,43 @@ export const ServicesView = ({
                 }}
               />
 
-              {/* Promotional Badge */}
+              {/* Promotional / Status Badge */}
               <span
                 style={{
                   position: 'absolute',
                   top: '12px',
                   left: '12px',
-                  backgroundColor: '#02200c',
-                  color: '#4ade80',
+                  backgroundColor:
+                    s.approvalStatus === 'pending'
+                      ? '#b45309'
+                      : s.approvalStatus === 'rejected'
+                      ? '#991b1b'
+                      : '#02200c',
+                  color:
+                    s.approvalStatus === 'pending'
+                      ? '#fef3c7'
+                      : s.approvalStatus === 'rejected'
+                      ? '#fee2e2'
+                      : '#4ade80',
                   padding: '4px 10px',
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  border: '1px solid rgba(74, 222, 128, 0.4)',
+                  border:
+                    s.approvalStatus === 'pending'
+                      ? '1px solid #fde68a'
+                      : s.approvalStatus === 'rejected'
+                      ? '1px solid #fecaca'
+                      : '1px solid rgba(74, 222, 128, 0.4)',
                 }}
               >
-                {s.badgeTag || 'TOP PICK'}
+                {s.approvalStatus === 'pending'
+                  ? '⏳ PENDING REVIEW'
+                  : s.approvalStatus === 'rejected'
+                  ? '✕ REJECTED'
+                  : s.badgeTag || 'TOP PICK'}
               </span>
 
               {/* Category Pill */}
@@ -425,6 +521,96 @@ export const ServicesView = ({
                   </span>
                 </div>
               </div>
+
+              {/* Provider Submission Approval Review Banner */}
+              {s.approvalStatus === 'pending' && (
+                <div
+                  style={{
+                    backgroundColor: '#fffbeb',
+                    border: '1.5px solid #fde68a',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#b45309', fontWeight: 700, fontSize: '12px', marginBottom: '6px' }}>
+                    <Clock size={14} />
+                    Provider Submission • Pending Approval
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                    Submitted by <strong>{s.providerName || 'Provider'}</strong>. Approving will publish this service live to all farmers.
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleApprove(s)}
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: '#16a34a',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      disabled={isProcessing}
+                    >
+                      <CheckCircle2 size={13} />
+                      Approve & Publish
+                    </button>
+                    <button
+                      onClick={() => handleReject(s)}
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: '#dc2626',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      disabled={isProcessing}
+                    >
+                      <AlertCircle size={13} />
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {s.approvalStatus === 'rejected' && (
+                <div
+                  style={{
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    marginBottom: '16px',
+                    fontSize: '11.5px',
+                    color: '#991b1b',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: '2px' }}>Service Rejected</div>
+                  <div>Reason: {s.rejectionReason || 'Did not meet requirements'}</div>
+                  <div style={{ marginTop: '6px' }}>
+                    <button
+                      onClick={() => handleApprove(s)}
+                      className="btn btn-sm btn-secondary"
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                      disabled={isProcessing}
+                    >
+                      Re-Approve Service
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Price & Actions Strip */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
