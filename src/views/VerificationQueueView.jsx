@@ -243,7 +243,7 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                                 fontWeight: 600,
                               }}
                             >
-                              {doc.documentType?.replace('_', ' ').toUpperCase()}
+                              {(doc.title || doc.type || doc.documentType || 'Document').replace(/_/g, ' ').toUpperCase()}
                             </span>
                           ))}
                         </div>
@@ -364,14 +364,14 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                           {(item.kycDocuments || []).map((doc, idx) => (
                             <a
                               key={idx}
-                              href={doc.documentUrl}
+                              href={doc.fileUrl || doc.documentUrl}
                               target="_blank"
                               rel="noreferrer"
                               className="btn btn-secondary btn-sm"
                               style={{ fontSize: '11px', padding: '3px 6px' }}
                             >
                               <ExternalLink size={11} />
-                              <span>{doc.documentType}</span>
+                              <span>{doc.title || doc.type || doc.documentType || 'Doc'}</span>
                             </a>
                           ))}
                         </div>
@@ -474,24 +474,29 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FileText size={18} color="var(--primary)" />
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '13px' }}>
-                        {doc.documentType?.replace('_', ' ').toUpperCase()}
+                      <div style={{ fontWeight: 600, fontSize: '13.5px' }}>
+                        {doc.title || (doc.type || doc.documentType || 'OFFICIAL DOCUMENT').replace(/_/g, ' ').toUpperCase()}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Status: <span style={{ textTransform: 'capitalize' }}>{doc.status || 'Pending'}</span>
+                        Status: <span style={{ textTransform: 'capitalize' }}>{doc.status || 'Pending'}</span> • Type: <span>{doc.type || doc.documentType || 'Document'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <a
-                    href={doc.documentUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-secondary btn-sm"
-                  >
-                    <ExternalLink size={13} />
-                    <span>View Official Document</span>
-                  </a>
+                  {(doc.fileUrl || doc.documentUrl) ? (
+                    <a
+                      href={doc.fileUrl || doc.documentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      <ExternalLink size={13} />
+                      <span>View Official Document</span>
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No file attached</span>
+                  )}
                 </div>
               ))}
             </div>
