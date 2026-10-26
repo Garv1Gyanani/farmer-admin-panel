@@ -209,15 +209,6 @@ export const ServicesView = ({
               <option value="price_desc">Price: High to Low</option>
               <option value="rating">Highest Rated</option>
             </select>
-
-            <button
-              onClick={handleOpenAdd}
-              className="btn btn-primary"
-              style={{ height: '38px', padding: '0 18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)' }}
-            >
-              <Plus size={16} />
-              <span>Add Service Offering</span>
-            </button>
           </div>
         </div>
 

@@ -644,31 +644,13 @@ export const CategoriesView = ({
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Assigned Offerings:</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Provider Offerings:</span>
                       <div style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 800 }}>
-                        {mappedServices.length} Active Services
+                        {mappedServices.length} Provider Services
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => handleOpenAddService(c._id)}
-                        className="btn btn-primary btn-sm"
-                        style={{
-                          height: '32px',
-                          padding: '0 12px',
-                          fontSize: '11.5px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          fontWeight: 700,
-                        }}
-                        title={`Add new service directly to ${c.name}`}
-                      >
-                        <Plus size={14} />
-                        <span>Add Service</span>
-                      </button>
-
                       {mappedServices.length > 0 && (
                         <button
                           onClick={() => toggleAccordion(c._id)}
@@ -866,13 +848,6 @@ export const CategoriesView = ({
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => handleOpenAddService(c._id)}
-                            className="btn btn-primary btn-sm"
-                            title={`Add service to ${c.name}`}
-                          >
-                            <Plus size={13} />
-                          </button>
                           <button
                             onClick={() => handleOpenEditCategory(c)}
                             className="btn btn-secondary btn-sm"
