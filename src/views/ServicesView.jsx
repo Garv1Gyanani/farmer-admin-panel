@@ -17,12 +17,17 @@ import {
   SlidersHorizontal,
   DollarSign,
   ArrowUpDown,
+  Phone,
+  ShieldCheck,
+  XCircle,
+  Building,
 } from 'lucide-react';
 import { ServiceModal } from '../components/ServiceModal';
 
 export const ServicesView = ({
   services = [],
   categories = [],
+  providers = [],
   onSaveService,
   onDeleteService,
   onReviewApproval,
@@ -35,6 +40,23 @@ export const ServicesView = ({
   const [approvalFilter, setApprovalFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'price_asc' | 'price_desc' | 'rating'
+
+  const getProviderInfo = (s) => {
+    const pId = s.providerId?._id || s.providerId;
+    const pIdStr = pId?.toString();
+    const found = providers.find(
+      (p) => p._id?.toString() === pIdStr || p.id?.toString() === pIdStr
+    );
+
+    return {
+      name: found?.name || s.providerId?.name || s.providerName || 'Registered Provider',
+      phone: found?.phone || s.providerId?.phone || '',
+      enterpriseName: found?.enterpriseName || '',
+      contractorId: found?.contractorId || '',
+      kycStatus: found?.kycStatus || '',
+      coverageRadiusKm: found?.coverageRadiusKm || '',
+    };
+  };
 
   const handleOpenAdd = () => {
     setSelectedService(null);
@@ -322,268 +344,344 @@ export const ServicesView = ({
           gap: '22px',
         }}
       >
-        {filteredServices.map((s) => (
-          <div
-            key={s._id}
-            className="card"
-            style={{
-              padding: '0',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              margin: '0',
-              borderRadius: '14px',
-              border: '1px solid var(--border-light)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
-            }}
-          >
-            {/* Image Banner */}
-            <div style={{ height: '180px', width: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#02200c' }}>
-              <img
-                src={s.imageUrl || 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80'}
-                alt={s.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(2, 32, 12, 0.2) 0%, rgba(2, 32, 12, 0.85) 100%)',
-                }}
-              />
-
-              {/* Promotional / Status Badge */}
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '12px',
-                  left: '12px',
-                  backgroundColor:
-                    s.approvalStatus === 'pending'
-                      ? '#b45309'
-                      : s.approvalStatus === 'rejected'
-                      ? '#991b1b'
-                      : '#02200c',
-                  color:
-                    s.approvalStatus === 'pending'
-                      ? '#fef3c7'
-                      : s.approvalStatus === 'rejected'
-                      ? '#fee2e2'
-                      : '#4ade80',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  border:
-                    s.approvalStatus === 'pending'
-                      ? '1px solid #fde68a'
-                      : s.approvalStatus === 'rejected'
-                      ? '1px solid #fecaca'
-                      : '1px solid rgba(74, 222, 128, 0.4)',
-                }}
-              >
-                {s.approvalStatus === 'pending'
-                  ? '⏳ PENDING REVIEW'
-                  : s.approvalStatus === 'rejected'
-                  ? '✕ REJECTED'
-                  : s.badgeTag || 'TOP PICK'}
-              </span>
-
-              {/* Category Pill */}
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '12px',
-                  left: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(6px)',
-                  color: '#02200c',
-                  padding: '3px 10px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                }}
-              >
-                {s.category?.name || 'General Agri'}
-              </span>
-
-              {/* Rating */}
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                  backdropFilter: 'blur(6px)',
-                  color: '#ffffff',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  fontSize: '11.5px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                {s.rating || 4.8}
-                <span style={{ fontSize: '10px', color: '#9ca3af' }}>({s.reviewsCount || 86})</span>
-              </span>
-            </div>
-
-            {/* Card Content */}
-            <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 3px 0' }}>
-                  {s.title}
-                </h3>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>
-                  Machinery: {s.machineryType}
-                </div>
-              </div>
-
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)',
-                  marginBottom: '14px',
-                  lineHeight: 1.45,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {s.description}
-              </p>
-
-              {/* Provider Info Strip */}
-              <div
-                style={{
-                  backgroundColor: '#f6fbf1',
-                  border: '1px solid #dce8d6',
-                  borderRadius: '8px',
-                  padding: '10px 12px',
-                  marginBottom: '14px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '12px',
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, color: '#02200c' }}>
-                    ✓ {s.providerName || 'Rajesh Agricultural Services'}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    📍 {s.operatingArea || 'Kalwar & 25 km radius'}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ backgroundColor: '#ffffff', border: '1px solid #c8eccb', padding: '2px 6px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700, color: '#16a34a' }}>
-                    {s.nextSlot || 'Available today'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Technical Specifications */}
-              <div
-                style={{
-                  backgroundColor: 'var(--surface-sunken)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  fontSize: '12px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Power & Implement:</span>
-                  <strong>{s.specifications?.horsepower || '55-65 HP'} • {s.specifications?.implementWidth || '8 Feet'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Turnaround Speed:</span>
-                  <strong>{s.specifications?.turnaroundTime || '1.5 hrs / acre'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Fuel / Crew:</span>
-                  <span style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: s.specifications?.fuelIncluded !== false ? 'var(--primary)' : 'var(--text-muted)' }}>
-                      <Fuel size={12} /> {s.specifications?.fuelIncluded !== false ? 'Fuel Inc' : 'No Fuel'}
+        {filteredServices.map((s) => {
+          const provider = getProviderInfo(s);
+          return (
+            <div
+              key={s._id}
+              className="card"
+              style={{
+                padding: '0',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                margin: '0',
+                borderRadius: '14px',
+                border: '1px solid var(--border-light)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              {/* Image Banner */}
+              <div style={{ height: '180px', width: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#02200c' }}>
+                {s.imageUrl ? (
+                  <img
+                    src={s.imageUrl}
+                    alt={s.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #02200c 0%, #0d381e 100%)',
+                      color: '#4ade80',
+                    }}
+                  >
+                    <Tractor size={48} strokeWidth={1.5} />
+                    <span style={{ fontSize: '13px', color: '#a7f3d0', marginTop: '8px', fontWeight: 700 }}>
+                      {s.machineryType || 'Farm Machinery Service'}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: s.specifications?.operatorIncluded !== false ? 'var(--primary)' : 'var(--text-muted)' }}>
-                      <UserCheck size={12} /> {s.specifications?.operatorIncluded !== false ? 'Operator Inc' : 'Machine Only'}
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Provider Submission Approval Review Banner */}
-              {s.approvalStatus === 'pending' && (
+                  </div>
+                )}
                 <div
                   style={{
-                    backgroundColor: '#fffbeb',
-                    border: '1.5px solid #fde68a',
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to bottom, rgba(2, 32, 12, 0.15) 0%, rgba(2, 32, 12, 0.75) 100%)',
+                  }}
+                />
+
+                {/* Status Badge */}
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    backgroundColor:
+                      s.approvalStatus === 'pending'
+                        ? '#b45309'
+                        : s.approvalStatus === 'rejected'
+                        ? '#991b1b'
+                        : '#02200c',
+                    color:
+                      s.approvalStatus === 'pending'
+                        ? '#fef3c7'
+                        : s.approvalStatus === 'rejected'
+                        ? '#fee2e2'
+                        : '#4ade80',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    border:
+                      s.approvalStatus === 'pending'
+                        ? '1px solid #fde68a'
+                        : s.approvalStatus === 'rejected'
+                        ? '1px solid #fecaca'
+                        : '1px solid rgba(74, 222, 128, 0.4)',
+                  }}
+                >
+                  {s.approvalStatus === 'pending'
+                    ? '⏳ PENDING REVIEW'
+                    : s.approvalStatus === 'rejected'
+                    ? '✕ REJECTED'
+                    : s.badgeTag || 'ACTIVE'}
+                </span>
+
+                {/* Category Pill */}
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: '12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(6px)',
+                    color: '#02200c',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {s.category?.name || 'General Agri'}
+                </span>
+
+                {/* Rating - Only display if real reviews exist */}
+                {s.reviewsCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                      backdropFilter: 'blur(6px)',
+                      color: '#ffffff',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                    {Number(s.rating).toFixed(1)}
+                    <span style={{ fontSize: '10px', color: '#9ca3af' }}>({s.reviewsCount})</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Card Content */}
+              <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 3px 0' }}>
+                    {s.title}
+                  </h3>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>
+                    Machinery: {s.machineryType}
+                  </div>
+                </div>
+
+                {s.description ? (
+                  <p
+                    style={{
+                      fontSize: '13px',
+                      color: 'var(--text-secondary)',
+                      marginBottom: '14px',
+                      lineHeight: 1.45,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {s.description}
+                  </p>
+                ) : null}
+
+                {/* WHICH PROVIDER LISTED IT - Prominent & Accurate Provider Details */}
+                <div
+                  style={{
+                    backgroundColor: '#f6fbf1',
+                    border: '1px solid #dce8d6',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    marginBottom: '14px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                    <div>
+                      <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800, color: '#15803d', marginBottom: '2px' }}>
+                        Listed by Service Provider
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#02200c' }}>
+                        {provider.name}
+                      </div>
+                      {provider.enterpriseName && (
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534', marginTop: '1px' }}>
+                          🏢 {provider.enterpriseName}
+                        </div>
+                      )}
+                    </div>
+                    {provider.kycStatus && (
+                      <span
+                        style={{
+                          backgroundColor: provider.kycStatus === 'approved' ? '#dcfce7' : '#fef3c7',
+                          border: `1px solid ${provider.kycStatus === 'approved' ? '#86efac' : '#fde68a'}`,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          color: provider.kycStatus === 'approved' ? '#166534' : '#92400e',
+                        }}
+                      >
+                        {provider.kycStatus === 'approved' ? '✓ KYC Approved' : 'KYC Pending'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11.5px', color: 'var(--text-secondary)', paddingTop: '8px', borderTop: '1px solid #e2ece0' }}>
+                    {provider.phone && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                        <Phone size={12} color="var(--primary)" /> {provider.phone}
+                      </span>
+                    )}
+                    {provider.contractorId && (
+                      <span style={{ fontWeight: 600, color: '#02200c' }}>
+                        ID: {provider.contractorId}
+                      </span>
+                    )}
+                    {s.operatingArea ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <MapPin size={11} /> {s.operatingArea}
+                      </span>
+                    ) : provider.coverageRadiusKm ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <MapPin size={11} /> {provider.coverageRadiusKm} km radius
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Technical Specifications - Only show what provider actually listed */}
+                <div
+                  style={{
+                    backgroundColor: 'var(--surface-sunken)',
                     borderRadius: '8px',
                     padding: '12px',
                     marginBottom: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '12px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#b45309', fontWeight: 700, fontSize: '12px', marginBottom: '6px' }}>
-                    <Clock size={14} />
-                    Provider Submission • Pending Approval
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                    Submitted by <strong>{s.providerName || 'Provider'}</strong>. Approving will publish this service live to all farmers.
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => handleApprove(s)}
-                      className="btn btn-sm"
-                      style={{
-                        backgroundColor: '#16a34a',
-                        color: '#ffffff',
-                        fontWeight: 700,
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                      disabled={isProcessing}
-                    >
-                      <CheckCircle2 size={13} />
-                      Approve & Publish
-                    </button>
-                    <button
-                      onClick={() => handleReject(s)}
-                      className="btn btn-sm"
-                      style={{
-                        backgroundColor: '#dc2626',
-                        color: '#ffffff',
-                        fontWeight: 700,
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                      disabled={isProcessing}
-                    >
-                      <AlertCircle size={13} />
-                      Reject
-                    </button>
+                  {s.specifications?.horsepower && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Power / Capacity:</span>
+                      <strong>{s.specifications.horsepower}</strong>
+                    </div>
+                  )}
+                  {s.specifications?.implementWidth && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Implement Width:</span>
+                      <strong>{s.specifications.implementWidth}</strong>
+                    </div>
+                  )}
+                  {s.specifications?.turnaroundTime && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Turnaround Speed:</span>
+                      <strong>{s.specifications.turnaroundTime}</strong>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Fuel / Crew:</span>
+                    <span style={{ display: 'flex', gap: '8px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: s.specifications?.fuelIncluded !== false ? 'var(--primary)' : 'var(--text-muted)' }}>
+                        <Fuel size={12} /> {s.specifications?.fuelIncluded !== false ? 'Fuel Inc' : 'No Fuel'}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: s.specifications?.operatorIncluded !== false ? 'var(--primary)' : 'var(--text-muted)' }}>
+                        <UserCheck size={12} /> {s.specifications?.operatorIncluded !== false ? 'Operator Inc' : 'Machine Only'}
+                      </span>
+                    </span>
                   </div>
                 </div>
-              )}
+
+                {/* Provider Submission Approval Review Banner */}
+                {s.approvalStatus === 'pending' && (
+                  <div
+                    style={{
+                      backgroundColor: '#fffbeb',
+                      border: '1.5px solid #fde68a',
+                      borderRadius: '10px',
+                      padding: '14px',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#b45309', fontWeight: 800, fontSize: '12px', marginBottom: '8px' }}>
+                      <Clock size={14} />
+                      PROVIDER SUBMISSION • PENDING REVIEW
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.45 }}>
+                      Submitted by <strong>{provider.name}</strong> {provider.enterpriseName ? `(${provider.enterpriseName})` : ''}{provider.phone ? ` • ${provider.phone}` : ''}. Approving will publish this service live to all farmers.
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleApprove(s)}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#16a34a',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                        }}
+                        disabled={isProcessing}
+                      >
+                        <CheckCircle2 size={14} />
+                        Approve & Publish
+                      </button>
+                      <button
+                        onClick={() => handleReject(s)}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#dc2626',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                        }}
+                        disabled={isProcessing}
+                      >
+                        <AlertCircle size={14} />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                )}
 
               {s.approvalStatus === 'rejected' && (
                 <div
@@ -643,8 +741,9 @@ export const ServicesView = ({
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
+    </div>
 
       {filteredServices.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>

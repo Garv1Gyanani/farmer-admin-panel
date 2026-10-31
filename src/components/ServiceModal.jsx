@@ -81,21 +81,21 @@ export const ServiceModal = ({
     pricingModel: 'per_acre',
     basePrice: 1000,
     minUnits: 1,
-    horsepower: '55-65 HP',
-    implementWidth: '8 Feet',
-    turnaroundTime: '1.5 hrs / acre',
+    horsepower: '',
+    implementWidth: '',
+    turnaroundTime: '',
     fuelIncluded: true,
     operatorIncluded: true,
-    providerName: 'Rajesh Agricultural Services',
-    badgeTag: 'Top Pick',
-    nextSlot: 'Available today',
-    operatingArea: 'Kalwar & 25 km radius',
-    responseTime: '< 30 mins',
-    rating: 4.8,
-    reviewsCount: 86,
+    providerName: '',
+    badgeTag: '',
+    nextSlot: '',
+    operatingArea: '',
+    responseTime: '',
+    rating: 0,
+    reviewsCount: 0,
     isFeatured: false,
     isActive: true,
-    imageUrl: PRESET_IMAGES[0].url,
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -104,25 +104,25 @@ export const ServiceModal = ({
         title: service.title || '',
         category: service.category?._id || service.category || categories[0]?._id || '',
         description: service.description || '',
-        machineryType: service.machineryType || 'Tractor 4WD',
+        machineryType: service.machineryType || '',
         pricingModel: service.pricingModel || 'per_acre',
-        basePrice: service.basePrice || 1000,
+        basePrice: service.basePrice || 0,
         minUnits: service.minUnits || 1,
-        horsepower: service.specifications?.horsepower || '55-65 HP',
-        implementWidth: service.specifications?.implementWidth || '8 Feet',
-        turnaroundTime: service.specifications?.turnaroundTime || '1.5 hrs / acre',
+        horsepower: service.specifications?.horsepower || '',
+        implementWidth: service.specifications?.implementWidth || '',
+        turnaroundTime: service.specifications?.turnaroundTime || '',
         fuelIncluded: service.specifications?.fuelIncluded !== false,
         operatorIncluded: service.specifications?.operatorIncluded !== false,
-        providerName: service.providerName || 'Rajesh Agricultural Services',
-        badgeTag: service.badgeTag || 'Top Pick',
-        nextSlot: service.nextSlot || 'Available today',
-        operatingArea: service.operatingArea || 'Kalwar & 25 km radius',
-        responseTime: service.responseTime || '< 30 mins',
-        rating: service.rating || 4.8,
-        reviewsCount: service.reviewsCount || 86,
+        providerName: service.providerName || '',
+        badgeTag: service.badgeTag || '',
+        nextSlot: service.nextSlot || '',
+        operatingArea: service.operatingArea || '',
+        responseTime: service.responseTime || '',
+        rating: service.rating || 0,
+        reviewsCount: service.reviewsCount || 0,
         isFeatured: Boolean(service.isFeatured),
         isActive: service.isActive !== false,
-        imageUrl: service.imageUrl || PRESET_IMAGES[0].url,
+        imageUrl: service.imageUrl || '',
       });
     } else {
       setFormData({
@@ -131,23 +131,23 @@ export const ServiceModal = ({
         description: '',
         machineryType: 'Tractor 4WD',
         pricingModel: 'per_acre',
-        basePrice: 1200,
+        basePrice: 1000,
         minUnits: 1,
-        horsepower: '55-65 HP',
-        implementWidth: '8 Feet',
-        turnaroundTime: '1.5 hrs / acre',
+        horsepower: '',
+        implementWidth: '',
+        turnaroundTime: '',
         fuelIncluded: true,
         operatorIncluded: true,
-        providerName: 'Rajesh Agricultural Services',
-        badgeTag: 'Top Pick',
-        nextSlot: 'Available today',
-        operatingArea: 'Kalwar & 25 km radius',
-        responseTime: '< 30 mins',
-        rating: 4.8,
-        reviewsCount: 86,
+        providerName: '',
+        badgeTag: '',
+        nextSlot: '',
+        operatingArea: '',
+        responseTime: '',
+        rating: 0,
+        reviewsCount: 0,
         isFeatured: false,
         isActive: true,
-        imageUrl: PRESET_IMAGES[0].url,
+        imageUrl: '',
       });
     }
     setActiveTab('basic');
@@ -618,7 +618,7 @@ export const ServiceModal = ({
                   className="form-control"
                   value={formData.providerName}
                   onChange={(e) => setFormData({ ...formData, providerName: e.target.value })}
-                  placeholder="e.g. Rajesh Agricultural Services"
+                  placeholder="e.g. Registered Provider Name"
                   style={{ height: '40px' }}
                 />
               </div>
@@ -648,7 +648,7 @@ export const ServiceModal = ({
                   className="form-control"
                   value={formData.operatingArea}
                   onChange={(e) => setFormData({ ...formData, operatingArea: e.target.value })}
-                  placeholder="e.g. Kalwar & 25 km radius"
+                  placeholder="e.g. 25 km radius"
                   style={{ height: '40px' }}
                 />
               </div>
@@ -851,7 +851,7 @@ export const ServiceModal = ({
                       {formData.description || 'High quality professional agricultural modern service...'}
                     </div>
                     <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, marginTop: '2px' }}>
-                      ✓ {formData.providerName || 'Rajesh Agricultural Services'}
+                      ✓ {formData.providerName || 'Registered Provider'}
                     </div>
                   </div>
                 </div>

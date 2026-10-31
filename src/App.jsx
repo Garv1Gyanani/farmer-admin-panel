@@ -442,6 +442,7 @@ const AdminApp = () => {
             <ServicesView
               services={services}
               categories={categories}
+              providers={providers}
               onSaveService={handleSaveService}
               onDeleteService={handleDeleteService}
               onReviewApproval={handleReviewServiceApproval}
