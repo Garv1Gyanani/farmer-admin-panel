@@ -10,9 +10,16 @@ import {
   ExternalLink,
   History,
   CheckCircle2,
+  Truck,
+  Building,
+  CreditCard,
+  MapPin,
+  User,
+  Phone,
+  Tag,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
-import { apiFetch } from '../api';
+import { API_BASE_URL, apiFetch } from '../api';
 
 export const VerificationQueueView = ({ queueData, onProcessVerification, isProcessing }) => {
   const [viewMode, setViewMode] = useState('queue'); // 'queue' or 'history'
@@ -390,8 +397,8 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
         <Modal
           isOpen={modalMode === 'review'}
           onClose={() => setModalMode(null)}
-          title={`Review KYC Application — ${selectedUser.userId?.name}`}
-          maxWidth="680px"
+          title={`Review Application — ${selectedUser.userId?.name || selectedUser.enterpriseName || 'Applicant'}`}
+          maxWidth="760px"
           footer={
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
@@ -421,84 +428,324 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
             </div>
           }
         >
-          <div>
-            {/* Applicant Summary */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Applicant & Account Summary */}
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                padding: '16px',
+                border: '1px solid var(--border-color)',
+                padding: '16px 18px',
                 borderRadius: '8px',
-                marginBottom: '20px',
                 display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '12px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '14px',
                 fontSize: '13px',
               }}
             >
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Applicant Name:</span>{' '}
-                <strong>{selectedUser.userId?.name}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Applicant Name</span>
+                <strong style={{ fontSize: '14px' }}>{selectedUser.userId?.name || 'N/A'}</strong>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Mobile Number:</span>{' '}
-                <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.userId?.phone}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Mobile Number</span>
+                <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.userId?.phone || 'N/A'}</strong>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Role Category:</span>{' '}
-                <strong style={{ textTransform: 'uppercase' }}>{activeTab}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Role Category</span>
+                <span className="badge badge-primary" style={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  {activeTab}
+                </span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Registration Date:</span>{' '}
-                <strong>{new Date(selectedUser.createdAt || Date.now()).toLocaleDateString()}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>KYC Status</span>
+                <span
+                  className={`badge ${
+                    selectedUser.kycStatus === 'approved'
+                      ? 'badge-success'
+                      : selectedUser.kycStatus === 'action_needed'
+                      ? 'badge-warning'
+                      : 'badge-warning'
+                  }`}
+                  style={{ textTransform: 'capitalize' }}
+                >
+                  {selectedUser.kycStatus || 'Pending'}
+                </span>
               </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Registration Date</span>
+                <strong>{new Date(selectedUser.createdAt || selectedUser.userId?.createdAt || Date.now()).toLocaleDateString()}</strong>
+              </div>
+              {selectedUser.contractorId && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Contractor ID</span>
+                  <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary)' }}>{selectedUser.contractorId}</strong>
+                </div>
+              )}
+              {selectedUser.agentCode && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Agent Code</span>
+                  <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary)' }}>{selectedUser.agentCode}</strong>
+                </div>
+              )}
             </div>
 
-            {/* Document Review Checklist */}
-            <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px' }}>
-              Submitted Verification Proofs ({selectedUser.kycDocuments?.length || 0})
-            </h4>
+            {/* Provider Enterprise & Operations Details */}
+            {(activeTab === 'providers' || selectedUser.enterpriseName) && (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                  <Building size={16} />
+                  <span>Enterprise & Service Coverage</span>
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Enterprise Name:</span>
+                    <strong>{selectedUser.enterpriseName || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Primary Category:</span>
+                    <strong>{selectedUser.primaryCategory || 'Harvesting & Mechanization'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Operational Radius:</span>
+                    <strong>{selectedUser.coverageRadiusKm || 35} km</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Business PAN:</span>
+                    <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.businessPan || 'Not Provided'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>GSTIN:</span>
+                    <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.gstin || 'Not Provided'}</strong>
+                  </div>
+                </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {(selectedUser.kycDocuments || []).map((doc, idx) => (
+                {selectedUser.serviceTags && selectedUser.serviceTags.length > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Offered Services:</span>
+                    {selectedUser.serviceTags.map((tag, i) => (
+                      <span key={i} className="badge badge-secondary" style={{ fontSize: '11px' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Machinery Fleet */}
+            {(activeTab === 'providers' || (selectedUser.machineryFleet && selectedUser.machineryFleet.length > 0)) && (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                  <Truck size={16} />
+                  <span>Machinery & Equipment Fleet ({selectedUser.machineryFleet?.length || 0})</span>
+                </h4>
+                {selectedUser.machineryFleet && selectedUser.machineryFleet.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table" style={{ fontSize: '12.5px', marginBottom: 0 }}>
+                      <thead>
+                        <tr>
+                          <th>Equipment Type</th>
+                          <th>Model & Specs</th>
+                          <th>Registration Plate</th>
+                          <th>Operator / Driver</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedUser.machineryFleet.map((machine, i) => (
+                          <tr key={i}>
+                            <td style={{ fontWeight: 600 }}>{machine.machineryType || 'Tractor'}</td>
+                            <td>
+                              {machine.model || 'Standard'} {machine.horsepower ? `(${machine.horsepower} HP)` : ''}
+                              {machine.year ? ` • ${machine.year}` : ''}
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                                {machine.regPlateNumber || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              {machine.driverName || 'Self / Operator'}
+                              {machine.driverPhone ? (
+                                <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                                  {machine.driverPhone}
+                                </span>
+                              ) : null}
+                            </td>
+                            <td>
+                              <span className={`badge ${machine.isAvailable !== false ? 'badge-success' : 'badge-secondary'}`}>
+                                {machine.isAvailable !== false ? 'Ready' : 'Deployed'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' }}>
+                    No machinery added yet during onboarding.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bank Payout Information */}
+            {selectedUser.bankDetails && (selectedUser.bankDetails.accountNumber || selectedUser.bankDetails.bankName) && (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                  <CreditCard size={16} />
+                  <span>Bank & Payout Account</span>
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Account Holder:</span>
+                    <strong>{selectedUser.bankDetails.accountHolder || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Bank Name:</span>
+                    <strong>{selectedUser.bankDetails.bankName || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Account Number:</span>
+                    <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.bankDetails.accountNumber || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>IFSC Code:</span>
+                    <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.bankDetails.ifsc || 'N/A'}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Farmer Farm Details */}
+            {activeTab === 'farmers' && (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                  <MapPin size={16} />
+                  <span>Farm Parcel & Location</span>
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Farm Name:</span>
+                    <strong>{selectedUser.farmName || 'Farm Holding'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Total Land Size:</span>
+                    <strong>{selectedUser.totalLandSize || 0} {selectedUser.landUnit || 'acres'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Farming Background:</span>
+                    <strong style={{ textTransform: 'capitalize' }}>{selectedUser.farmingBackground || 'Owner Cultivator'}</strong>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'block' }}>Village & District:</span>
+                    <strong>
+                      {[selectedUser.village, selectedUser.tehsilBlock, selectedUser.district, selectedUser.state, selectedUser.pinCode]
+                        .filter(Boolean)
+                        .join(', ') || 'Not Specified'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Document Review Checklist */}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={16} color="var(--primary)" />
+                <span>Submitted Verification Proofs ({selectedUser.kycDocuments?.length || 0})</span>
+              </h4>
+
+              {selectedUser.kycDocuments && selectedUser.kycDocuments.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {selectedUser.kycDocuments.map((doc, idx) => {
+                    const rawFile = doc.fileUrl || doc.documentUrl;
+                    const docUrl = rawFile
+                      ? rawFile.startsWith('http://') || rawFile.startsWith('https://')
+                        ? rawFile
+                        : `${API_BASE_URL}${rawFile.startsWith('/') ? '' : '/'}${rawFile}`
+                      : null;
+
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          border: '1px solid var(--border-color)',
+                          backgroundColor: 'var(--surface)',
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '8px',
+                              backgroundColor: 'rgba(26, 93, 26, 0.1)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <FileText size={18} color="var(--primary)" />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '13.5px' }}>
+                              {doc.title || (doc.type || doc.documentType || 'OFFICIAL PROOF').replace(/_/g, ' ').toUpperCase()}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              Status: <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{doc.status || 'Pending'}</span>
+                              {doc.uploadedAt ? ` • Uploaded: ${new Date(doc.uploadedAt).toLocaleDateString()}` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        {docUrl ? (
+                          <a
+                            href={docUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            <ExternalLink size={13} />
+                            <span>View Proof</span>
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No file attached</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
                 <div
-                  key={idx}
                   style={{
-                    border: '1px solid var(--border-color)',
-                    padding: '12px 14px',
-                    borderRadius: '6px',
+                    backgroundColor: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px',
+                    padding: '14px 16px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    gap: '12px',
+                    fontSize: '13px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FileText size={18} color="var(--primary)" />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                        {doc.title || (doc.type || doc.documentType || 'OFFICIAL DOCUMENT').replace(/_/g, ' ').toUpperCase()}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Status: <span style={{ textTransform: 'capitalize' }}>{doc.status || 'Pending'}</span> • Type: <span>{doc.type || doc.documentType || 'Document'}</span>
-                      </div>
-                    </div>
+                  <AlertCircle size={20} color="#d97706" style={{ flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ color: '#92400e', display: 'block' }}>No Verification Proof Documents Uploaded Yet</strong>
+                    <span style={{ color: '#b45309', fontSize: '12px' }}>
+                      The user skipped document upload during onboarding or document upload is currently pending.
+                    </span>
                   </div>
-
-                  {(doc.fileUrl || doc.documentUrl) ? (
-                    <a
-                      href={doc.fileUrl || doc.documentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontWeight: 600 }}
-                    >
-                      <ExternalLink size={13} />
-                      <span>View Official Document</span>
-                    </a>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No file attached</span>
-                  )}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </Modal>
