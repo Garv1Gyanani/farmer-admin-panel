@@ -273,10 +273,22 @@ const AdminApp = () => {
   const handleReviewServiceApproval = async (serviceId, approvalStatus, rejectionReason) => {
     setIsProcessing(true);
     try {
-      await apiFetch(`/api/admin/services/${serviceId}/approval`, {
-        method: 'PUT',
-        body: JSON.stringify({ approvalStatus, rejectionReason }),
-      });
+      try {
+        await apiFetch(`/api/admin/services/${serviceId}/approval`, {
+          method: 'PUT',
+          body: JSON.stringify({ approvalStatus, rejectionReason }),
+        });
+      } catch (err) {
+        // Fallback: If aaPanel PM2 hasn't reloaded /approval route yet, update via /api/admin/services/:id
+        await apiFetch(`/api/admin/services/${serviceId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            approvalStatus,
+            rejectionReason: rejectionReason || '',
+            isActive: approvalStatus === 'approved',
+          }),
+        });
+      }
       await fetchAllData();
     } catch (err) {
       alert(`Review service failed: ${err.message}`);
