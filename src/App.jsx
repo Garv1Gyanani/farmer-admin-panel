@@ -207,15 +207,49 @@ const AdminApp = () => {
   };
 
   const handleDeleteCategory = async (categoryId) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    const category = categories.find((c) => c._id === categoryId);
+    const categoryName = category ? category.name : 'this category';
+    const mappedServices = services.filter(
+      (s) => (s.category?._id || s.category) === categoryId
+    );
+
+    let cascade = false;
+    if (mappedServices.length > 0) {
+      const confirmCascade = window.confirm(
+        `Category "${categoryName}" has ${mappedServices.length} active service(s) assigned to it.\n\n` +
+        `Do you want to delete this category AND remove all ${mappedServices.length} associated service(s)?`
+      );
+      if (!confirmCascade) return;
+      cascade = true;
+    } else {
+      if (!window.confirm(`Are you sure you want to delete category "${categoryName}"?`)) return;
+    }
+
     setIsProcessing(true);
     try {
-      await apiFetch(`/api/admin/categories/${categoryId}`, {
+      await apiFetch(`/api/admin/categories/${categoryId}${cascade ? '?cascade=true' : ''}`, {
         method: 'DELETE',
       });
       await fetchAllData();
     } catch (err) {
-      alert(`Delete category failed: ${err.message}`);
+      if (err.message && err.message.toLowerCase().includes('active services')) {
+        const forceConfirm = window.confirm(
+          `${err.message}\n\nWould you like to force delete this category along with all associated services?`
+        );
+        if (forceConfirm) {
+          try {
+            await apiFetch(`/api/admin/categories/${categoryId}?cascade=true`, {
+              method: 'DELETE',
+            });
+            await fetchAllData();
+            return;
+          } catch (retryErr) {
+            alert(`Force delete failed: ${retryErr.message}`);
+          }
+        }
+      } else {
+        alert(`Delete category failed: ${err.message}`);
+      }
     } finally {
       setIsProcessing(false);
     }
