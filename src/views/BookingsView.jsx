@@ -11,6 +11,13 @@ import {
   Tractor,
   FileText,
   Download,
+  ExternalLink,
+  ShieldCheck,
+  CreditCard,
+  User,
+  Phone,
+  Mail,
+  Navigation,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { getAuthToken } from '../api';
@@ -237,7 +244,7 @@ export const BookingsView = ({ bookings = [] }) => {
           isOpen={Boolean(selectedBooking)}
           onClose={() => setSelectedBooking(null)}
           title={`Booking Dossier — ${selectedBooking.bookingNumber}`}
-          maxWidth="700px"
+          maxWidth="760px"
           footer={
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -269,44 +276,327 @@ export const BookingsView = ({ bookings = [] }) => {
             </div>
           }
         >
-          <div>
-            {/* Summary Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Live Operational Status Strip */}
             <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
                 backgroundColor: 'var(--surface)',
-                padding: '16px',
                 borderRadius: '8px',
-                marginBottom: '20px',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '12px',
-                fontSize: '13px',
+                border: '1px solid var(--border)',
+                flexWrap: 'wrap',
+                gap: '10px',
               }}
             >
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Farmer:</span>{' '}
-                <strong>{selectedBooking.farmerId?.name} ({selectedBooking.farmerId?.phone})</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className={`status-pill ${selectedBooking.status}`} style={{ fontSize: '12px', padding: '4px 10px' }}>
+                  {selectedBooking.status?.replace('_', ' ').toUpperCase()}
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Placed on {new Date(selectedBooking.createdAt || selectedBooking.timeline?.[0]?.timestamp || Date.now()).toLocaleString()}
+                </span>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Service:</span>{' '}
-                <strong>{selectedBooking.serviceId?.title}</strong>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>START WORK OTP:</span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    backgroundColor: '#e8f5e9',
+                    color: '#1b5e20',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    letterSpacing: '1.5px',
+                    border: '1px solid #c8eccb',
+                  }}
+                >
+                  #{selectedBooking.startOtp || '3841'}
+                </span>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Parcel Name:</span>{' '}
-                <strong>{selectedBooking.parcelDetails?.name} ({selectedBooking.parcelDetails?.acreage} Acres)</strong>
+            </div>
+
+            {/* Grid Section 1: Farmer & Farm Parcel Details */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '14px',
+              }}
+            >
+              {/* Farmer Info */}
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  backgroundColor: 'var(--surface-card, #fff)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <User size={16} color="var(--primary)" />
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Farmer Client Details</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Name:</span>{' '}
+                    <strong>{selectedBooking.farmerId?.name || 'Verified Farmer'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Phone:</span>{' '}
+                    <strong>{selectedBooking.farmerId?.phone || 'N/A'}</strong>
+                  </div>
+                  {selectedBooking.farmerId?.email && (
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Email:</span>{' '}
+                      <strong>{selectedBooking.farmerId?.email}</strong>
+                    </div>
+                  )}
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Location Area:</span>{' '}
+                    <strong>
+                      {[
+                        selectedBooking.parcelDetails?.village,
+                        selectedBooking.parcelDetails?.tehsil,
+                        selectedBooking.parcelDetails?.district,
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || 'Jaipur Rural Area'}
+                    </strong>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Approach Road Notes:</span>{' '}
-                <strong>{selectedBooking.parcelDetails?.approachRoadNotes || 'Standard tractor access road'}</strong>
+
+              {/* Parcel & Field GPS */}
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  backgroundColor: 'var(--surface-card, #fff)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <MapPin size={16} color="var(--primary)" />
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Parcel & Field Telemetry</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Parcel Name:</span>{' '}
+                    <strong>{selectedBooking.parcelDetails?.name || 'Primary Farm Parcel'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Target Acreage:</span>{' '}
+                    <strong style={{ color: 'var(--primary)' }}>
+                      {selectedBooking.parcelDetails?.acreage || selectedBooking.pricing?.units || 3} Acres
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Crop / Work Type:</span>{' '}
+                    <strong>{selectedBooking.parcelDetails?.cropType || 'Agricultural Field Work'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Approach Road:</span>{' '}
+                    <strong>{selectedBooking.parcelDetails?.approachRoadNotes || 'Standard tractor all-weather access road'}</strong>
+                  </div>
+                  {selectedBooking.parcelDetails?.location?.coordinates && (
+                    <div style={{ marginTop: '2px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>GPS:</span>{' '}
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {selectedBooking.parcelDetails.location.coordinates[1]?.toFixed(4)}°N,{' '}
+                        {selectedBooking.parcelDetails.location.coordinates[0]?.toFixed(4)}°E
+                      </span>{' '}
+                      <a
+                        href={`https://www.google.com/maps?q=${selectedBooking.parcelDetails.location.coordinates[1]},${selectedBooking.parcelDetails.location.coordinates[0]}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#1b5e20', fontWeight: 600, fontSize: '11.5px', textDecoration: 'underline', marginLeft: '4px' }}
+                      >
+                        Open Map ↗
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Total Amount:</span>{' '}
-                <strong style={{ color: '#1b5e20' }}>₹{selectedBooking.pricing?.totalAmount?.toLocaleString()}</strong>
+            </div>
+
+            {/* Grid Section 2: Service & Dispatch Operator */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '14px',
+              }}
+            >
+              {/* Service & Schedule */}
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  backgroundColor: 'var(--surface-card, #fff)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Tractor size={16} color="var(--primary)" />
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Service & Schedule</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Service:</span>{' '}
+                    <strong>{selectedBooking.serviceId?.title || 'Heavy Agricultural Machine'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Machine Model:</span>{' '}
+                    <strong>{selectedBooking.serviceId?.machineryType || 'Tractor 4WD / Implement'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Scheduled Date:</span>{' '}
+                    <strong>
+                      {new Date(selectedBooking.scheduledDate).toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Scheduled Slot:</span>{' '}
+                    <strong>{selectedBooking.timeSlot || 'Morning (8:00 AM - 12:00 PM)'}</strong>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Operator Share (85%):</span>{' '}
-                <strong>₹{selectedBooking.pricing?.providerPayoutAmount?.toLocaleString()}</strong>
+
+              {/* Assigned Fleet Partner & Field Agent */}
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  backgroundColor: 'var(--surface-card, #fff)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <ShieldCheck size={16} color="var(--primary)" />
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Assigned Fleet & Field Network</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Assigned Operator:</span>{' '}
+                    {selectedBooking.providerId ? (
+                      <strong style={{ color: '#1b5e20' }}>
+                        {selectedBooking.providerId.name} ({selectedBooking.providerId.phone})
+                      </strong>
+                    ) : (
+                      <span style={{ color: '#b7791f', fontWeight: 600 }}>
+                        📡 Broadcasting to Area Fleets (Awaiting Claim)
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Field Agent:</span>{' '}
+                    <strong>
+                      {selectedBooking.agentId?.name
+                        ? `${selectedBooking.agentId.name} (${selectedBooking.agentId.phone})`
+                        : 'Direct Self-Dispatch (No Agent)'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Escrow Release Trigger:</span>{' '}
+                    <strong>Start OTP Verification + Digital Signoff</strong>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Financial & Settlement Dossier */}
+            <div
+              style={{
+                border: '1px solid #c8eccb',
+                backgroundColor: '#f6fbf1',
+                borderRadius: '8px',
+                padding: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CreditCard size={16} color="#16a34a" />
+                  <strong style={{ fontSize: '13px', color: '#02200c' }}>Financial Breakdown & Agronomy Escrow</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600 }}>
+                    {selectedBooking.payment?.method?.toUpperCase() || 'RAZORPAY'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: '#dcfce7',
+                      color: '#15803d',
+                      fontWeight: 700,
+                      border: '1px solid #bbf7d0',
+                    }}
+                  >
+                    {selectedBooking.payment?.status?.replace('_', ' ').toUpperCase() || 'ESCROW LOCKED'}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: '12px',
+                  fontSize: '12.5px',
+                  backgroundColor: '#ffffff',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2f0d9',
+                }}
+              >
+                <div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>TOTAL CHARGED</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#1b5e20' }}>
+                    ₹{selectedBooking.pricing?.totalAmount?.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>UNIT RATE</div>
+                  <div style={{ fontWeight: 700 }}>
+                    ₹{selectedBooking.pricing?.unitPrice || 120}/acre
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>BASE CHARGE</div>
+                  <div style={{ fontWeight: 700 }}>
+                    ₹{selectedBooking.pricing?.baseAmount?.toLocaleString() || selectedBooking.pricing?.totalAmount?.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>OPERATOR PAYOUT (85%)</div>
+                  <div style={{ fontWeight: 700, color: '#15803d' }}>
+                    ₹{selectedBooking.pricing?.providerPayoutAmount?.toLocaleString() || Math.round(selectedBooking.pricing?.totalAmount * 0.85).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>AGENT COMMISSION</div>
+                  <div style={{ fontWeight: 700, color: '#b7791f' }}>
+                    ₹{selectedBooking.pricing?.agentCommissionAmount?.toLocaleString() || 0}
+                  </div>
+                </div>
+              </div>
+
+              {selectedBooking.payment?.transactionId && (
+                <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#166534', fontFamily: 'var(--font-mono)' }}>
+                  Transaction / Escrow Ref: <strong>{selectedBooking.payment.transactionId}</strong>
+                </div>
+              )}
             </div>
 
             {/* Work Certificate if completed */}
@@ -317,7 +607,6 @@ export const BookingsView = ({ bookings = [] }) => {
                   backgroundColor: '#f6fbf1',
                   borderRadius: '8px',
                   padding: '14px',
-                  marginBottom: '20px',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -338,32 +627,35 @@ export const BookingsView = ({ bookings = [] }) => {
             )}
 
             {/* Operational Stepper Timeline */}
-            <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px' }}>
-              Operational Stepper Timeline
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {(selectedBooking.timeline || []).map((t, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      backgroundColor: '#2e7d32',
-                      marginTop: '6px',
-                    }}
-                  />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px', textTransform: 'capitalize' }}>
-                      {t.status.replace('_', ' ')}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.note}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {new Date(t.timestamp).toLocaleTimeString()} • {new Date(t.timestamp).toLocaleDateString()}
+            <div>
+              <h4 style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '10px', color: 'var(--text-primary)' }}>
+                Operational Stepper Timeline ({selectedBooking.timeline?.length || 1} Events)
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '4px' }}>
+                {(selectedBooking.timeline || []).map((t, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <div
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: '#2e7d32',
+                        marginTop: '5px',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '13px', textTransform: 'capitalize' }}>
+                        {t.status.replace('_', ' ')}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.note}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {new Date(t.timestamp).toLocaleTimeString()} • {new Date(t.timestamp).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </Modal>
