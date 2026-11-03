@@ -542,51 +542,180 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
             </div>
           </div>
 
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Email (Optional)</label>
-            <input
-              type="email"
-              className="form-control"
-              value={agentForm.email}
-              onChange={(e) => setAgentForm({ ...agentForm, email: e.target.value })}
-              placeholder="agent@example.com"
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Assigned Territory Villages (Comma separated)</label>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Email (Optional)</label>
               <input
-                type="text"
-                required
+                type="email"
                 className="form-control"
-                value={agentForm.villages}
-                onChange={(e) => setAgentForm({ ...agentForm, villages: e.target.value })}
-                placeholder="e.g. Samrala, Machhiwara, Khanna"
+                value={agentForm.email}
+                onChange={(e) => setAgentForm({ ...agentForm, email: e.target.value })}
+                placeholder="agent@example.com"
               />
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>District</label>
-              <select
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>District *</label>
+              <input
+                list="district-options-onboard"
+                type="text"
+                required
                 className="form-control"
                 value={agentForm.district}
                 onChange={(e) => setAgentForm({ ...agentForm, district: e.target.value })}
-              >
-                <option value="Ludhiana">Ludhiana</option>
-                <option value="Patiala">Patiala</option>
-                <option value="Sangrur">Sangrur</option>
-                <option value="Fatehgarh Sahib">Fatehgarh Sahib</option>
-                <option value="Bathinda">Bathinda</option>
-                <option value="Amritsar">Amritsar</option>
-              </select>
+                placeholder="Search district (e.g. Jaipur, Ludhiana)..."
+              />
+              <datalist id="district-options-onboard">
+                {availableDistricts.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
             </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              Assigned Territory Villages
+            </label>
+
+            {/* Selected village chips */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '6px',
+                minHeight: '36px',
+                padding: '8px',
+                background: 'var(--bg-secondary, #fafafa)',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                alignItems: 'center',
+              }}
+            >
+              {currentVillagesList.map((village) => (
+                <span
+                  key={village}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: '#e8f5e9',
+                    color: '#1b5e20',
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    padding: '3px 10px',
+                    borderRadius: '16px',
+                    border: '1px solid #c8e6c9',
+                  }}
+                >
+                  {village}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVillage(village)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#2e7d32',
+                    }}
+                    title="Remove village"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+              {currentVillagesList.length === 0 && (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  No villages selected yet. Search or click suggestions below.
+                </span>
+              )}
+            </div>
+
+            {/* Dynamic village search / add bar */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder={`Search or type village in ${agentForm.district || 'district'}...`}
+                value={villageSearchInput}
+                onChange={(e) => setVillageSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (villageSearchInput.trim()) {
+                      handleAddVillage(villageSearchInput.trim());
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => {
+                  if (villageSearchInput.trim()) {
+                    handleAddVillage(villageSearchInput.trim());
+                  }
+                }}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
+
+            {/* Suggestions list */}
+            {matchingSuggestions.length > 0 && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  Quick add suggestions for <strong>{agentForm.district}</strong>:
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {matchingSuggestions.map((sugg) => (
+                    <button
+                      key={sugg}
+                      type="button"
+                      onClick={() => handleAddVillage(sugg)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '12px',
+                        padding: '3px 9px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#16a34a';
+                        e.currentTarget.style.color = '#16a34a';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      <Plus size={11} /> {sugg}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
             <button type="button" onClick={() => setIsOnboardModalOpen(false)} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" disabled={isProcessing} className="btn btn-primary">
+            <button
+              type="submit"
+              disabled={isProcessing || currentVillagesList.length === 0}
+              className="btn btn-primary"
+            >
               {isProcessing ? 'Onboarding...' : 'Onboard Agent'}
             </button>
           </div>
@@ -623,15 +752,168 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
             </div>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>District *</label>
+              <input
+                list="district-options-edit"
+                type="text"
+                required
+                className="form-control"
+                value={agentForm.district}
+                onChange={(e) => setAgentForm({ ...agentForm, district: e.target.value })}
+                placeholder="Search district (e.g. Jaipur, Ludhiana)..."
+              />
+              <datalist id="district-options-edit">
+                {availableDistricts.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Email</label>
+              <input
+                type="email"
+                className="form-control"
+                value={agentForm.email}
+                onChange={(e) => setAgentForm({ ...agentForm, email: e.target.value })}
+              />
+            </div>
+          </div>
+
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Assigned Territory Villages (Comma separated)</label>
-            <input
-              type="text"
-              required
-              className="form-control"
-              value={agentForm.villages}
-              onChange={(e) => setAgentForm({ ...agentForm, villages: e.target.value })}
-            />
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              Assigned Territory Villages
+            </label>
+
+            {/* Selected village chips */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '6px',
+                minHeight: '36px',
+                padding: '8px',
+                background: 'var(--bg-secondary, #fafafa)',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                alignItems: 'center',
+              }}
+            >
+              {currentVillagesList.map((village) => (
+                <span
+                  key={village}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: '#e8f5e9',
+                    color: '#1b5e20',
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    padding: '3px 10px',
+                    borderRadius: '16px',
+                    border: '1px solid #c8e6c9',
+                  }}
+                >
+                  {village}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVillage(village)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#2e7d32',
+                    }}
+                    title="Remove village"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+              {currentVillagesList.length === 0 && (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  No villages selected yet. Search or click suggestions below.
+                </span>
+              )}
+            </div>
+
+            {/* Dynamic village search / add bar */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder={`Search or type village in ${agentForm.district || 'district'}...`}
+                value={villageSearchInput}
+                onChange={(e) => setVillageSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (villageSearchInput.trim()) {
+                      handleAddVillage(villageSearchInput.trim());
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => {
+                  if (villageSearchInput.trim()) {
+                    handleAddVillage(villageSearchInput.trim());
+                  }
+                }}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
+
+            {/* Suggestions list */}
+            {matchingSuggestions.length > 0 && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  Quick add suggestions for <strong>{agentForm.district}</strong>:
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {matchingSuggestions.map((sugg) => (
+                    <button
+                      key={sugg}
+                      type="button"
+                      onClick={() => handleAddVillage(sugg)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '12px',
+                        padding: '3px 9px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#16a34a';
+                        e.currentTarget.style.color = '#16a34a';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      <Plus size={11} /> {sugg}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
