@@ -13,9 +13,23 @@ import {
   Plus,
   Edit2,
   UserPlus,
+  X,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { apiFetch } from '../api';
+
+const REGIONAL_LOCATIONS = {
+  'Jaipur': ['Amber Tehsil', 'Jaipur Rural', 'Ganpati Nagar', 'Kalwar', 'Chomu', 'Sanganer', 'Bassi', 'Kotputli', 'Shahpura', 'Jamwa Ramgarh', 'Phulera', 'Jobner'],
+  'Jodhpur': ['Mandore', 'Luni', 'Bilara', 'Bhopalgarh', 'Osian', 'Phalodi', 'Balesar', 'Shergarh'],
+  'Alwar': ['Tijara', 'Behror', 'Kishangarh Bas', 'Kotkasim', 'Ramgarh', 'Thanagazi'],
+  'Sikar': ['Fatehpur', 'Laxmangarh', 'Danta Ramgarh', 'Neem Ka Thana', 'Khandela', 'Sri Madhopur'],
+  'Bikaner': ['Nokha', 'Lunkaransar', 'Kolayat', 'Khajuwala', 'Poogal', 'Dungargarh'],
+  'Ajmer': ['Kishangarh', 'Beawar', 'Nasirabad', 'Kekri', 'Pushkar'],
+  'Ludhiana': ['Samrala Rural', 'Machhiwara Hub', 'Khanna', 'Jagraon', 'Raikot', 'Payal'],
+  'Patiala': ['Nabha', 'Rajpura', 'Samana', 'Patran'],
+  'Bathinda': ['Talwandi Sabo', 'Rampura Phul', 'Maur'],
+  'Amritsar': ['Ajnala', 'Majitha', 'Baba Bakala'],
+};
 
 export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) => {
   const [search, setSearch] = useState('');
@@ -24,6 +38,7 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [villageSearchInput, setVillageSearchInput] = useState('');
 
   const [agentForm, setAgentForm] = useState({
     name: '',
@@ -35,7 +50,54 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
     status: 'active',
   });
 
+  // Extract all unique districts dynamically from regional list + existing agent records in database
+  const availableDistricts = Array.from(
+    new Set([
+      ...Object.keys(REGIONAL_LOCATIONS),
+      ...agents.flatMap((a) => a.coverageClusters?.map((c) => c.district) || []).filter(Boolean),
+    ])
+  ).sort();
+
+  const currentVillagesList = agentForm.villages
+    ? agentForm.villages.split(',').map((v) => v.trim()).filter(Boolean)
+    : [];
+
+  const handleAddVillage = (villageName) => {
+    const trimmed = villageName.trim();
+    if (!trimmed) return;
+    if (!currentVillagesList.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
+      const updated = [...currentVillagesList, trimmed].join(', ');
+      setAgentForm({ ...agentForm, villages: updated });
+    }
+    setVillageSearchInput('');
+  };
+
+  const handleRemoveVillage = (villageName) => {
+    const updated = currentVillagesList
+      .filter((v) => v.toLowerCase() !== villageName.toLowerCase())
+      .join(', ');
+    setAgentForm({ ...agentForm, villages: updated });
+  };
+
+  // Dynamic suggested villages based on chosen district & DB records
+  const allVillagesInDistrict = Array.from(
+    new Set([
+      ...(REGIONAL_LOCATIONS[agentForm.district] || []),
+      ...agents
+        .flatMap((a) => a.coverageClusters || [])
+        .filter((c) => !agentForm.district || c.district?.toLowerCase() === agentForm.district.toLowerCase())
+        .map((c) => c.villageName),
+    ])
+  ).filter((v) => !currentVillagesList.some((cv) => cv.toLowerCase() === v.toLowerCase()));
+
+  const matchingSuggestions = villageSearchInput.trim()
+    ? allVillagesInDistrict.filter((v) =>
+        v.toLowerCase().includes(villageSearchInput.trim().toLowerCase())
+      )
+    : allVillagesInDistrict.slice(0, 8);
+
   const handleOpenOnboard = () => {
+    setVillageSearchInput('');
     setAgentForm({
       name: '',
       phone: '',
@@ -49,13 +111,14 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
   };
 
   const handleOpenEdit = (a) => {
+    setVillageSearchInput('');
     setSelectedAgent(a);
     setAgentForm({
       name: a.name,
       phone: a.phone,
       email: a.email || '',
-      villages: a.coverageClusters?.map((c) => c.villageName).join(', ') || 'Nabha, Samrala',
-      district: a.coverageClusters?.[0]?.district || 'Ludhiana',
+      villages: a.coverageClusters?.map((c) => c.villageName).join(', ') || 'Amber Tehsil, Jaipur Rural',
+      district: a.coverageClusters?.[0]?.district || 'Jaipur',
       kycStatus: a.kycStatus || 'approved',
       status: a.status || 'active',
     });
@@ -66,7 +129,11 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
     e.preventDefault();
     setIsProcessing(true);
     try {
-      const villageList = agentForm.villages.split(',').map((v) => v.trim()).filter(Boolean);
+      const villageList = (Array.isArray(agentForm.villages)
+        ? agentForm.villages
+        : agentForm.villages.split(',')
+      ).map((v) => v.trim()).filter(Boolean);
+
       await apiFetch('/api/admin/agents', {
         method: 'POST',
         body: JSON.stringify({
@@ -92,7 +159,11 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
     if (!selectedAgent) return;
     setIsProcessing(true);
     try {
-      const villageList = agentForm.villages.split(',').map((v) => v.trim()).filter(Boolean);
+      const villageList = (Array.isArray(agentForm.villages)
+        ? agentForm.villages
+        : agentForm.villages.split(',')
+      ).map((v) => v.trim()).filter(Boolean);
+
       await apiFetch(`/api/admin/agents/${selectedAgent._id}`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -102,6 +173,7 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
           status: agentForm.status,
           kycStatus: agentForm.kycStatus,
           villages: villageList,
+          district: agentForm.district,
         }),
       });
       setIsEditModalOpen(false);
@@ -114,10 +186,19 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
   };
 
   const filteredAgents = agents.filter((a) => {
+    const q = search.toLowerCase().trim();
+    if (!q) {
+      return statusFilter === 'all' || a.status === statusFilter;
+    }
     const matchesSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.phone.includes(search) ||
-      a.agentCode?.toLowerCase().includes(search.toLowerCase());
+      a.name.toLowerCase().includes(q) ||
+      a.phone.includes(q) ||
+      a.agentCode?.toLowerCase().includes(q) ||
+      a.coverageClusters?.some(
+        (c) =>
+          c.villageName?.toLowerCase().includes(q) ||
+          c.district?.toLowerCase().includes(q)
+      );
 
     const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
     return matchesSearch && matchesStatus;
