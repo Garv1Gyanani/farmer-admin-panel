@@ -29,8 +29,8 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
     name: '',
     phone: '',
     email: '',
-    villages: 'Samrala Rural, Machhiwara Hub',
-    district: 'Ludhiana',
+    villages: 'Amber Tehsil, Jaipur Rural',
+    district: 'Jaipur',
     kycStatus: 'approved',
     status: 'active',
   });
@@ -40,8 +40,8 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
       name: '',
       phone: '',
       email: '',
-      villages: 'Samrala Rural, Machhiwara Hub',
-      district: 'Ludhiana',
+      villages: 'Amber Tehsil, Jaipur Rural',
+      district: 'Jaipur',
       kycStatus: 'approved',
       status: 'active',
     });
@@ -236,12 +236,12 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
                   </td>
                   <td>
                     <span style={{ fontWeight: 700, color: '#1b5e20' }}>
-                      ₹{a.availableCommission.toLocaleString()}
+                      ₹{(a.availableCommission || 0).toLocaleString()}
                     </span>
                   </td>
                   <td>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      ₹{a.pendingCommission.toLocaleString()} pending / ₹{a.vestedCommission.toLocaleString()} vested
+                      ₹{(a.pendingCommission || 0).toLocaleString()} pending / ₹{(a.vestedCommission || 0).toLocaleString()} vested
                     </div>
                   </td>
                   <td>
