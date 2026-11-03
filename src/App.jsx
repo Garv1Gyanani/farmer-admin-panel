@@ -122,6 +122,14 @@ const AdminApp = () => {
       fetchAllData();
     });
 
+    socket.on('booking_updated', () => {
+      fetchAllData();
+    });
+
+    socket.on('notification', () => {
+      fetchAllData();
+    });
+
     return () => {
       socket.disconnect();
     };

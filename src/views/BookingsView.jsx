@@ -102,10 +102,11 @@ export const BookingsView = ({ bookings = [] }) => {
             >
               <option value="all">All Operations ({bookings.length})</option>
               <option value="pending_broadcast">Pending Dispatch Broadcast</option>
-              <option value="assigned">Assigned</option>
-              <option value="en_route">En Route</option>
+              <option value="assigned">Assigned / Accepted</option>
               <option value="in_progress">In Progress (Active Work)</option>
+              <option value="completion_pending">Completion Pending (Awaiting OTP)</option>
               <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
