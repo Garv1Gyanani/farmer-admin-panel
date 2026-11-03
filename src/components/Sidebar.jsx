@@ -13,6 +13,7 @@ import {
   Layers,
   Compass,
   FolderTree,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -61,6 +62,7 @@ export const Sidebar = ({
       badgeColor: 'warning',
     },
     { id: 'categories', label: 'Service Categories', icon: FolderTree },
+    { id: 'notifications', label: 'Push Notifications', icon: Bell },
     { id: 'audit', label: 'Audit Logs', icon: ScrollText },
   ];
 

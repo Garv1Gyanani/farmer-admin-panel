@@ -14,6 +14,7 @@ import { BookingsView } from './views/BookingsView';
 import { FinanceView } from './views/FinanceView';
 import { ServicesView } from './views/ServicesView';
 import { CategoriesView } from './views/CategoriesView';
+import { NotificationsView } from './views/NotificationsView';
 import { AuditLogsView } from './views/AuditLogsView';
 import { LiveMapView } from './views/LiveMapView';
 import { AdminProfileModal } from './components/AdminProfileModal';
@@ -352,6 +353,8 @@ const AdminApp = () => {
         return 'Services & Machinery Catalog';
       case 'categories':
         return 'Service Categories & Taxonomy';
+      case 'notifications':
+        return 'Push Notification Dispatcher';
       case 'audit':
         return 'Administrative Audit Trail';
       default:
@@ -480,6 +483,10 @@ const AdminApp = () => {
               onDeleteService={handleDeleteService}
               isProcessing={isProcessing}
             />
+          )}
+
+          {currentView === 'notifications' && (
+            <NotificationsView />
           )}
 
           {currentView === 'audit' && (
