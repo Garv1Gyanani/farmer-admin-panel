@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { GooglePlacesAutocomplete } from '../components/GooglePlacesAutocomplete';
 import { apiFetch } from '../api';
 
 const REGIONAL_LOCATIONS = {
@@ -555,20 +556,16 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
             </div>
             <div>
               <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>District *</label>
-              <input
-                list="district-options-onboard"
-                type="text"
+              <GooglePlacesAutocomplete
                 required
-                className="form-control"
+                placeholder="Search district with Google Maps (e.g. Jaipur, Ludhiana)..."
                 value={agentForm.district}
-                onChange={(e) => setAgentForm({ ...agentForm, district: e.target.value })}
-                placeholder="Search district (e.g. Jaipur, Ludhiana)..."
+                onChange={(val) => setAgentForm({ ...agentForm, district: val })}
+                onSelect={(place) => {
+                  const districtName = place.mainText || place.description.split(',')[0];
+                  setAgentForm({ ...agentForm, district: districtName });
+                }}
               />
-              <datalist id="district-options-onboard">
-                {availableDistricts.map((d) => (
-                  <option key={d} value={d} />
-                ))}
-              </datalist>
             </div>
           </div>
 
@@ -634,27 +631,24 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
               )}
             </div>
 
-            {/* Dynamic village search / add bar */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder={`Search or type village in ${agentForm.district || 'district'}...`}
-                value={villageSearchInput}
-                onChange={(e) => setVillageSearchInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (villageSearchInput.trim()) {
-                      handleAddVillage(villageSearchInput.trim());
-                    }
-                  }
-                }}
-              />
+            {/* Dynamic village search / add bar with Google Places Autocomplete */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <GooglePlacesAutocomplete
+                  placeholder={`Search address or village with Google Maps in ${agentForm.district || 'area'}...`}
+                  value={villageSearchInput}
+                  onChange={(val) => setVillageSearchInput(val)}
+                  onSelect={(place) => {
+                    const villageOrLocality = place.mainText || place.description.split(',')[0];
+                    handleAddVillage(villageOrLocality);
+                    setVillageSearchInput('');
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px', height: '42px' }}
                 onClick={() => {
                   if (villageSearchInput.trim()) {
                     handleAddVillage(villageSearchInput.trim());
@@ -843,27 +837,24 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
               )}
             </div>
 
-            {/* Dynamic village search / add bar */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder={`Search or type village in ${agentForm.district || 'district'}...`}
-                value={villageSearchInput}
-                onChange={(e) => setVillageSearchInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (villageSearchInput.trim()) {
-                      handleAddVillage(villageSearchInput.trim());
-                    }
-                  }
-                }}
-              />
+            {/* Dynamic village search / add bar with Google Places Autocomplete */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <GooglePlacesAutocomplete
+                  placeholder={`Search address or village with Google Maps in ${agentForm.district || 'area'}...`}
+                  value={villageSearchInput}
+                  onChange={(val) => setVillageSearchInput(val)}
+                  onSelect={(place) => {
+                    const villageOrLocality = place.mainText || place.description.split(',')[0];
+                    handleAddVillage(villageOrLocality);
+                    setVillageSearchInput('');
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px', height: '42px' }}
                 onClick={() => {
                   if (villageSearchInput.trim()) {
                     handleAddVillage(villageSearchInput.trim());
