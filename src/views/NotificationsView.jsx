@@ -10,14 +10,15 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  Sparkles,
   Smartphone,
-  Info,
+  Search,
+  Radio,
+  Sparkles,
 } from 'lucide-react';
 import { apiFetch } from '../api';
 
 export const NotificationsView = () => {
-  const [targetType, setTargetType] = useState('role'); // 'role', 'all', 'individual'
+  const [targetType, setTargetType] = useState('role'); // 'role', 'individual', 'all'
   const [targetRole, setTargetRole] = useState('farmer'); // 'farmer', 'provider', 'agent'
   const [selectedUserId, setSelectedUserId] = useState('');
   const [title, setTitle] = useState('');
@@ -132,132 +133,96 @@ export const NotificationsView = () => {
   });
 
   return (
-    <div className="view-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Bell size={28} color="#22c55e" />
-            Push Notification Dispatcher
-          </h1>
-          <p style={{ color: '#94a3b8', marginTop: '6px', fontSize: '14px' }}>
-            Broadcast real-time announcements, weather warnings, and direct push alerts to Farmers, Providers, or Agents via Firebase Cloud Messaging.
-          </p>
-        </div>
-      </div>
-
+    <div>
+      {/* Alert banner if present */}
       {resultMessage && (
         <div
           style={{
-            marginBottom: '24px',
-            padding: '16px',
-            borderRadius: '12px',
-            background: resultMessage.type === 'success' ? '#064e3b' : '#7f1d1d',
-            color: resultMessage.type === 'success' ? '#6ee7b7' : '#fca5a5',
+            marginBottom: '20px',
+            padding: '14px 18px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: resultMessage.type === 'success' ? 'var(--success-bg)' : 'var(--error-bg)',
+            color: resultMessage.type === 'success' ? '#065f46' : '#991b1b',
+            border: `1px solid ${resultMessage.type === 'success' ? 'var(--success)' : 'var(--error)'}`,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            border: `1px solid ${resultMessage.type === 'success' ? '#059669' : '#b91c1c'}`,
+            fontSize: '14px',
+            fontWeight: 600,
           }}
         >
-          {resultMessage.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <span style={{ fontWeight: '600' }}>{resultMessage.text}</span>
+          {resultMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span>{resultMessage.text}</span>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(450px, 1.2fr) 1fr', gap: '28px' }}>
-        {/* Dispatch Form Card */}
-        <div
-          style={{
-            background: '#1e293b',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #334155',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          }}
-        >
-          <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#f8fafc', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Send size={20} color="#38bdf8" />
-            Compose Message
-          </h2>
+      {/* Main Grid Layout matching ProFarmer Admin Design System */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', alignItems: 'start' }}>
+        
+        {/* Card: Compose Notification */}
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div className="card-header">
+            <div className="card-title">
+              <Send size={18} color="var(--primary)" />
+              <span>Compose Push Broadcast</span>
+            </div>
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--primary)',
+                backgroundColor: 'var(--primary-fixed)',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+            >
+              <Radio size={12} /> Live FCM Gateway
+            </span>
+          </div>
 
           <form onSubmit={handleSend}>
-            {/* Target Audience Selector */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginBottom: '8px' }}>
-                TARGET AUDIENCE
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {/* Target Audience Pill Selector */}
+            <div className="form-group">
+              <label className="form-label">Target Audience</label>
+              <div className="tabs-container" style={{ width: '100%', marginBottom: 0 }}>
                 <button
                   type="button"
+                  className={`tab-btn ${targetType === 'role' ? 'active' : ''}`}
                   onClick={() => setTargetType('role')}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '10px',
-                    border: targetType === 'role' ? '2px solid #22c55e' : '1px solid #334155',
-                    background: targetType === 'role' ? 'rgba(34, 197, 94, 0.15)' : '#0f172a',
-                    color: targetType === 'role' ? '#4ade80' : '#cbd5e1',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
-                  <Users size={20} />
+                  <Users size={16} />
                   <span>By Role</span>
                 </button>
-
                 <button
                   type="button"
+                  className={`tab-btn ${targetType === 'individual' ? 'active' : ''}`}
                   onClick={() => setTargetType('individual')}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '10px',
-                    border: targetType === 'individual' ? '2px solid #38bdf8' : '1px solid #334155',
-                    background: targetType === 'individual' ? 'rgba(56, 189, 248, 0.15)' : '#0f172a',
-                    color: targetType === 'individual' ? '#38bdf8' : '#cbd5e1',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
-                  <User size={20} />
+                  <User size={16} />
                   <span>Individual</span>
                 </button>
-
                 <button
                   type="button"
+                  className={`tab-btn ${targetType === 'all' ? 'active' : ''}`}
                   onClick={() => setTargetType('all')}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '10px',
-                    border: targetType === 'all' ? '2px solid #f59e0b' : '1px solid #334155',
-                    background: targetType === 'all' ? 'rgba(245, 158, 11, 0.15)' : '#0f172a',
-                    color: targetType === 'all' ? '#fbbf24' : '#cbd5e1',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
-                  <Globe size={20} />
+                  <Globe size={16} />
                   <span>All Users</span>
                 </button>
               </div>
             </div>
 
-            {/* Role Filter (if By Role or Individual) */}
+            {/* Target Role Filters */}
             {targetType !== 'all' && (
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginBottom: '8px' }}>
-                  {targetType === 'individual' ? 'SELECT USER TYPE' : 'TARGET ROLE GROUP'}
+              <div className="form-group">
+                <label className="form-label">
+                  {targetType === 'individual' ? 'Filter by User Role' : 'Select Target Role Group'}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                   <button
@@ -266,22 +231,11 @@ export const NotificationsView = () => {
                       setTargetRole('farmer');
                       setSelectedUserId('');
                     }}
-                    style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: targetRole === 'farmer' ? '1px solid #22c55e' : '1px solid #334155',
-                      background: targetRole === 'farmer' ? 'rgba(34, 197, 94, 0.2)' : '#0f172a',
-                      color: targetRole === 'farmer' ? '#4ade80' : '#94a3b8',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      fontWeight: '600',
-                      fontSize: '13px',
-                    }}
+                    className={`btn ${targetRole === 'farmer' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}
                   >
-                    <Users size={16} /> Farmers
+                    <Users size={15} />
+                    <span>Farmers</span>
                   </button>
 
                   <button
@@ -290,22 +244,11 @@ export const NotificationsView = () => {
                       setTargetRole('provider');
                       setSelectedUserId('');
                     }}
-                    style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: targetRole === 'provider' ? '1px solid #f97316' : '1px solid #334155',
-                      background: targetRole === 'provider' ? 'rgba(249, 115, 22, 0.2)' : '#0f172a',
-                      color: targetRole === 'provider' ? '#fb923c' : '#94a3b8',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      fontWeight: '600',
-                      fontSize: '13px',
-                    }}
+                    className={`btn ${targetRole === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}
                   >
-                    <Tractor size={16} /> Providers
+                    <Tractor size={15} />
+                    <span>Providers</span>
                   </button>
 
                   <button
@@ -314,70 +257,47 @@ export const NotificationsView = () => {
                       setTargetRole('agent');
                       setSelectedUserId('');
                     }}
-                    style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: targetRole === 'agent' ? '1px solid #a855f7' : '1px solid #334155',
-                      background: targetRole === 'agent' ? 'rgba(168, 85, 247, 0.2)' : '#0f172a',
-                      color: targetRole === 'agent' ? '#c084fc' : '#94a3b8',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      fontWeight: '600',
-                      fontSize: '13px',
-                    }}
+                    className={`btn ${targetRole === 'agent' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}
                   >
-                    <Briefcase size={16} /> Agents
+                    <Briefcase size={15} />
+                    <span>Agents</span>
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Individual User Picker */}
+            {/* Individual Dropdown Picker */}
             {targetType === 'individual' && (
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginBottom: '8px' }}>
-                  SELECT SPECIFIC {targetRole.toUpperCase()}
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                  }}
-                />
+              <div className="form-group">
+                <label className="form-label">Select Specific {targetRole.toUpperCase()}</label>
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search by name or phone..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    style={{ paddingLeft: '36px' }}
+                  />
+                </div>
                 <select
+                  className="form-control"
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    fontSize: '14px',
-                  }}
+                  disabled={isLoadingUsers}
                 >
-                  <option value="">-- Choose {targetRole} recipient --</option>
+                  <option value="">
+                    {isLoadingUsers ? 'Loading directory...' : `-- Select ${targetRole} recipient (${filteredUsers.length} available) --`}
+                  </option>
                   {filteredUsers.map((u) => {
                     const id = u.userId?._id || u.userId || u._id;
                     const name = u.name || u.userName || 'Unnamed';
                     const phone = u.phone || u.userPhone || '';
                     return (
                       <option key={id} value={id}>
-                        {name} ({phone})
+                        {name} • {phone}
                       </option>
                     );
                   })}
@@ -385,175 +305,180 @@ export const NotificationsView = () => {
               </div>
             )}
 
-            {/* Message Title */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginBottom: '8px' }}>
-                NOTIFICATION TITLE
-              </label>
+            {/* Title Input */}
+            <div className="form-group">
+              <label className="form-label">Notification Title</label>
               <input
                 type="text"
-                placeholder="e.g. 🚜 Special Subsidy Announcement or Weather Alert"
+                className="form-control"
+                placeholder="e.g. 🚜 Monsoon Machinery Pre-Booking Open"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #334155',
-                  background: '#0f172a',
-                  color: '#f8fafc',
-                  fontSize: '14px',
-                }}
               />
             </div>
 
             {/* Message Body */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginBottom: '8px' }}>
-                NOTIFICATION MESSAGE
-              </label>
+            <div className="form-group">
+              <label className="form-label">Notification Message</label>
               <textarea
+                className="form-control"
                 rows={4}
-                placeholder="Enter detailed message to appear on users' device notification shade..."
+                placeholder="Enter the push notification message body that will appear on user devices..."
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #334155',
-                  background: '#0f172a',
-                  color: '#f8fafc',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                }}
+                style={{ resize: 'vertical' }}
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Action Button */}
             <button
               type="submit"
               disabled={isSending}
+              className="btn btn-primary"
               style={{
                 width: '100%',
-                padding: '14px',
-                borderRadius: '10px',
-                border: 'none',
-                background: isSending ? '#475569' : '#22c55e',
-                color: '#ffffff',
-                fontWeight: '700',
-                fontSize: '15px',
-                cursor: isSending ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
+                padding: '12px 20px',
                 justifyContent: 'center',
-                gap: '10px',
-                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                fontSize: '14px',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-md)',
               }}
             >
-              <Send size={18} />
-              {isSending ? 'Dispatching Push Notification...' : 'Send Push Notification Now'}
+              <Send size={16} />
+              <span>{isSending ? 'Sending Push Notification...' : 'Dispatch Notification Now'}</span>
             </button>
           </form>
         </div>
 
-        {/* Live Preview & Recent History */}
+        {/* Right Column: Device Mockup & History */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Phone Notification Preview */}
-          <div
-            style={{
-              background: '#1e293b',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid #334155',
-            }}
-          >
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#94a3b8', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Smartphone size={18} color="#a855f7" />
-              Real-time Device Preview
-            </h3>
+          
+          {/* Card: Live Device Preview */}
+          <div className="card" style={{ marginBottom: 0 }}>
+            <div className="card-header">
+              <div className="card-title">
+                <Smartphone size={18} color="var(--primary)" />
+                <span>Device Banner Preview</span>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Android / iOS</span>
+            </div>
 
             <div
               style={{
-                background: '#0f172a',
-                borderRadius: '14px',
+                backgroundColor: 'var(--surface-container)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-lg)',
                 padding: '16px',
-                border: '1px solid #334155',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Bell size={12} color="#000" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                  }}
+                >
+                  <Bell size={14} />
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0' }}>ProFarmer Network</span>
-                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: 'auto' }}>just now</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    ProFarmer Network
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>via ProFarmer Mobile App</div>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Just now</span>
               </div>
-              <div style={{ fontWeight: '700', fontSize: '14px', color: '#f8fafc', marginBottom: '4px' }}>
-                {title || 'Sample Title (e.g. Tractor Dispatch Update)'}
-              </div>
-              <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.4' }}>
-                {body || 'Your message will appear here on user phones with instant banner and audio alerts.'}
+
+              <div style={{ paddingLeft: '36px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {title || 'Tractor Dispatch & Subsidy Notice'}
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                  {body || 'Your message will appear here on farmers, providers, and agents phone screens with high priority sound and banners.'}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Dispatches */}
-          <div
-            style={{
-              background: '#1e293b',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid #334155',
-              flex: 1,
-            }}
-          >
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#94a3b8', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} color="#38bdf8" />
-              Recent System Dispatches ({history.length})
-            </h3>
+          {/* Card: Dispatch History */}
+          <div className="card" style={{ marginBottom: 0, flex: 1 }}>
+            <div className="card-header">
+              <div className="card-title">
+                <Clock size={18} color="var(--primary)" />
+                <span>Recent System Broadcasts</span>
+              </div>
+              <span className="pill-count" style={{ marginLeft: 0 }}>{history.length}</span>
+            </div>
 
             {isLoadingHistory ? (
-              <div style={{ color: '#64748b', fontSize: '13px' }}>Loading notification history...</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                Loading dispatch history...
+              </div>
             ) : history.length === 0 ? (
-              <div style={{ color: '#64748b', fontSize: '13px' }}>No notifications dispatched yet.</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                No notifications dispatched yet.
+              </div>
             ) : (
-              <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {history.slice(0, 10).map((n) => (
+              <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {history.slice(0, 15).map((n) => (
                   <div
                     key={n._id}
                     style={{
-                      background: '#0f172a',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      border: '1px solid #334155',
+                      padding: '12px 14px',
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: 'var(--radius-md)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <span style={{ fontWeight: '700', fontSize: '13px', color: '#e2e8f0' }}>{n.title}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {n.title}
+                      </span>
                       <span
                         style={{
                           fontSize: '11px',
+                          fontWeight: 600,
                           padding: '2px 8px',
-                          borderRadius: '12px',
-                          background: n.recipientRole === 'farmer' ? '#064e3b' : n.recipientRole === 'provider' ? '#7c2d12' : '#581c87',
-                          color: n.recipientRole === 'farmer' ? '#6ee7b7' : n.recipientRole === 'provider' ? '#fdba74' : '#d8b4fe',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor:
+                            n.recipientRole === 'farmer'
+                              ? 'var(--success-bg)'
+                              : n.recipientRole === 'provider'
+                              ? 'var(--warning-bg)'
+                              : 'var(--info-bg)',
+                          color:
+                            n.recipientRole === 'farmer'
+                              ? '#065f46'
+                              : n.recipientRole === 'provider'
+                              ? '#9a3412'
+                              : '#0369a1',
                           textTransform: 'capitalize',
                         }}
                       >
-                        {n.recipientRole || 'all'}
+                        {n.recipientRole || 'All'}
                       </span>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>{n.body}</p>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-                      {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString()}
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {n.body}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                      {new Date(n.createdAt).toLocaleDateString()} at {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
         </div>
+
       </div>
     </div>
   );
