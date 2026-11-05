@@ -20,7 +20,13 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../api';
 
-export const ReferralsView = ({ onRefreshParent }) => {
+export const ReferralsView = ({
+  farmers = [],
+  agents = [],
+  commissions = [],
+  bookings = [],
+  onRefreshParent,
+}) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     summary: {
@@ -43,9 +49,157 @@ export const ReferralsView = ({ onRefreshParent }) => {
   const [processingId, setProcessingId] = useState(null);
   const [feedbackMsg, setFeedbackMsg] = useState(null);
 
+  const buildFallbackData = () => {
+    const allReferred = (farmers || []).filter(
+      (f) => f.referredBy || f.referredByAgentId
+    );
+
+    let filtered = allReferred;
+    if (selectedAgent && selectedAgent !== 'all') {
+      filtered = filtered.filter((f) => {
+        const aId = f.referredByAgentId?._id || f.referredByAgentId;
+        const matched = (agents || []).find(
+          (a) => a._id === aId || a.agentCode === selectedAgent || a._id === selectedAgent
+        );
+        return aId === selectedAgent || (matched && matched._id === selectedAgent);
+      });
+    }
+
+    if (activeTab === 'pending') {
+      filtered = filtered.filter((f) => f.status === 'pending_verification' || f.kycStatus === 'pending');
+    } else if (activeTab === 'active') {
+      filtered = filtered.filter((f) => f.status === 'active' || f.kycStatus === 'approved');
+    } else if (activeTab === 'rejected') {
+      filtered = filtered.filter((f) => f.status === 'rejected' || f.kycStatus === 'rejected');
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (f) =>
+          (f.name || '').toLowerCase().includes(q) ||
+          (f.phone || '').toLowerCase().includes(q) ||
+          (f.village || '').toLowerCase().includes(q) ||
+          (f.referredBy || '').toLowerCase().includes(q)
+      );
+    }
+
+    const totalReferrals = allReferred.length;
+    const pendingApprovals = allReferred.filter(
+      (f) => f.status === 'pending_verification' || f.kycStatus === 'pending'
+    ).length;
+    const activeApproved = allReferred.filter(
+      (f) => f.status === 'active' || f.kycStatus === 'approved'
+    ).length;
+    const rejectedCount = allReferred.filter(
+      (f) => f.status === 'rejected' || f.kycStatus === 'rejected'
+    ).length;
+
+    const totalCommissionsEarned = (commissions || []).reduce(
+      (acc, c) => acc + (c.commissionAmount || c.amount || 0),
+      0
+    );
+
+    const referredFarmerIds = allReferred.map((f) => f._id);
+    const refBookings = (bookings || []).filter((b) =>
+      referredFarmerIds.includes(b.farmerId?._id || b.farmerId)
+    );
+    const totalBookingsCount = refBookings.length;
+    const totalBookingGMV = refBookings.reduce(
+      (acc, b) => acc + (b.pricing?.totalAmount || 0),
+      0
+    );
+
+    const agentStats = (agents || []).map((agent) => {
+      const agentFarmers = allReferred.filter((f) => {
+        const aId = f.referredByAgentId?._id || f.referredByAgentId;
+        return (
+          aId === agent._id ||
+          (f.referredBy && (f.referredBy === agent.name || f.referredBy === agent.agentCode))
+        );
+      });
+      const approvedCount = agentFarmers.filter(
+        (f) => f.status === 'active' || f.kycStatus === 'approved'
+      ).length;
+      const pendingCount = agentFarmers.filter(
+        (f) => f.status === 'pending_verification' || f.kycStatus === 'pending'
+      ).length;
+
+      const farmerUserIds = agentFarmers.map((f) => f._id);
+      const aBookings = (bookings || []).filter((b) =>
+        farmerUserIds.includes(b.farmerId?._id || b.farmerId)
+      );
+      const gmv = aBookings.reduce((acc, b) => acc + (b.pricing?.totalAmount || 0), 0);
+      const commEarned = (commissions || [])
+        .filter((c) => (c.agentId?._id || c.agentId) === agent._id)
+        .reduce((acc, c) => acc + (c.commissionAmount || c.amount || 0), 0);
+
+      return {
+        agentId: agent._id,
+        name: agent.name,
+        phone: agent.phone,
+        agentCode: agent.agentCode || 'AG-N/A',
+        district: agent.assignedDistrict || agent.coverageClusters?.[0]?.district || 'N/A',
+        totalReferrals: agentFarmers.length,
+        approvedReferrals: approvedCount,
+        pendingReferrals: pendingCount,
+        totalBookings: aBookings.length,
+        totalRevenue: gmv,
+        commissionsEarned: commEarned,
+      };
+    });
+
+    agentStats.sort((a, b) => b.totalReferrals - a.totalReferrals);
+
+    const mappedReferrals = filtered.map((f) => {
+      const aId = f.referredByAgentId?._id || f.referredByAgentId;
+      const matchedAgent = (agents || []).find(
+        (a) =>
+          a._id === aId ||
+          (f.referredBy && (a.name === f.referredBy || a.agentCode === f.referredBy))
+      );
+      return {
+        _id: f._id,
+        farmerUserId: f._id,
+        farmerName: f.name,
+        farmerPhone: f.phone,
+        farmerStatus: f.status,
+        kycStatus: f.kycStatus || 'pending',
+        farmName: f.farmName || `${f.name}'s Farm`,
+        village: f.village || 'N/A',
+        district: f.district || '',
+        totalLandSize: f.totalLandSize || 5,
+        agentId: matchedAgent?._id || aId,
+        agentName: matchedAgent?.name || f.referredBy || 'Field Agent',
+        agentPhone: matchedAgent?.phone || '',
+        referralCodeUsed: matchedAgent?.agentCode || '',
+        createdAt: f.createdAt || new Date().toISOString(),
+      };
+    });
+
+    return {
+      summary: {
+        totalReferrals,
+        pendingApprovals,
+        activeApproved,
+        rejectedCount,
+        totalBookingsCount,
+        totalBookingGMV,
+        totalCommissionsEarned,
+      },
+      agentStats,
+      referrals: mappedReferrals,
+      agents: (agents || []).map((a) => ({
+        _id: a._id,
+        name: a.name,
+        agentCode: a.agentCode,
+      })),
+    };
+  };
+
   useEffect(() => {
     fetchReferralData();
-  }, [activeTab, selectedAgent]);
+  }, [activeTab, selectedAgent, farmers, agents]);
 
   const fetchReferralData = async () => {
     try {
@@ -56,11 +210,14 @@ export const ReferralsView = ({ onRefreshParent }) => {
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
 
       const res = await apiFetch(`/api/admin/referrals/analytics?${params.toString()}`);
-      if (res.success) {
+      if (res.success && (res.referrals?.length > 0 || res.agentStats?.length > 0)) {
         setData(res);
+      } else {
+        setData(buildFallbackData());
       }
     } catch (err) {
-      console.error('Error fetching referral analytics:', err);
+      console.warn('API /api/admin/referrals/analytics unavailable, using reactive store fallback:', err.message);
+      setData(buildFallbackData());
     } finally {
       setLoading(false);
     }
@@ -135,7 +292,7 @@ export const ReferralsView = ({ onRefreshParent }) => {
   const summary = data.summary || {};
   const agentStats = data.agentStats || [];
   const referrals = data.referrals || [];
-  const agents = data.agents || [];
+  const agentList = data.agents?.length > 0 ? data.agents : (agents || []);
 
   return (
     <div className="view-container">
@@ -207,7 +364,7 @@ export const ReferralsView = ({ onRefreshParent }) => {
           </div>
           <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main)' }}>{summary.totalReferrals || 0}</div>
           <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Across {agents.length} authorized field agents
+            Across {agentList.length} authorized field agents
           </div>
         </div>
 
@@ -401,7 +558,7 @@ export const ReferralsView = ({ onRefreshParent }) => {
               }}
             >
               <option value="all">All Field Agents</option>
-              {agents.map((ag) => (
+              {agentList.map((ag) => (
                 <option key={ag._id} value={ag._id}>
                   {ag.name} ({ag.agentCode || ag.phone})
                 </option>

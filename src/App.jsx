@@ -440,6 +440,10 @@ const AdminApp = () => {
 
           {currentView === 'referrals' && (
             <ReferralsView
+              farmers={farmers}
+              agents={agents}
+              commissions={commissions}
+              bookings={bookings}
               onRefreshParent={fetchAllData}
             />
           )}
