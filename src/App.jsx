@@ -15,6 +15,7 @@ import { FinanceView } from './views/FinanceView';
 import { ServicesView } from './views/ServicesView';
 import { CategoriesView } from './views/CategoriesView';
 import { NotificationsView } from './views/NotificationsView';
+import { ReferralsView } from './views/ReferralsView';
 import { AuditLogsView } from './views/AuditLogsView';
 import { LiveMapView } from './views/LiveMapView';
 import { AdminProfileModal } from './components/AdminProfileModal';
@@ -433,6 +434,12 @@ const AdminApp = () => {
               agents={agents}
               onToggleUserStatus={handleToggleUserStatus}
               onRefreshData={fetchAllData}
+            />
+          )}
+
+          {currentView === 'referrals' && (
+            <ReferralsView
+              onRefreshParent={fetchAllData}
             />
           )}
 

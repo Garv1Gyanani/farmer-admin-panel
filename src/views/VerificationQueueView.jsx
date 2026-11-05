@@ -215,8 +215,13 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                           <div>
                             <span style={{ fontWeight: 600 }}>{item.totalLandSize} Acres</span>
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                              {item.village || 'Nabha, Patiala'}
+                              {item.village || 'N/A'}{item.district ? `, ${item.district}` : ''}
                             </div>
+                            {item.referredByAgentId && (
+                              <div style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 6px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600 }}>
+                                🤝 Ref: {item.referredByAgentId.name}
+                              </div>
+                            )}
                           </div>
                         )}
                         {activeTab === 'agents' && (
@@ -647,6 +652,22 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                     </strong>
                   </div>
                 </div>
+
+                {selectedUser.referredByAgentId && (
+                  <div style={{ marginTop: '14px', padding: '12px 14px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🤝 Field Agent Referral Attribution</span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px', color: 'var(--text-main)' }}>
+                      Onboarded by: {selectedUser.referredByAgentId.name} ({selectedUser.referredByAgentId.phone})
+                    </div>
+                    {selectedUser.referralCodeUsed && (
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Referral Code: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{selectedUser.referralCodeUsed}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

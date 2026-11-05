@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Users,
+  UserCheck,
   Briefcase,
   Tractor,
   CalendarCheck,
@@ -40,6 +41,7 @@ export const Sidebar = ({
     },
     { id: 'farmers', label: 'Farmer Management', icon: Users },
     { id: 'agents', label: 'Field Agent Network', icon: Briefcase },
+    { id: 'referrals', label: 'Referral Analytics', icon: UserCheck },
     {
       id: 'providers',
       label: 'Service Provider Management',
