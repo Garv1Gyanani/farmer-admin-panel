@@ -21,7 +21,7 @@ import {
 import { Modal } from '../components/Modal';
 import { API_BASE_URL, apiFetch } from '../api';
 
-export const VerificationQueueView = ({ queueData, onProcessVerification, isProcessing }) => {
+export const VerificationQueueView = ({ queueData, agents = [], onProcessVerification, isProcessing }) => {
   const [viewMode, setViewMode] = useState('queue'); // 'queue' or 'history'
   const [activeTab, setActiveTab] = useState('farmers'); // 'farmers', 'agents', 'providers'
   const [selectedUser, setSelectedUser] = useState(null);
@@ -217,11 +217,27 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                               {item.village || 'N/A'}{item.district ? `, ${item.district}` : ''}
                             </div>
-                            {item.referredByAgentId && (
-                              <div style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 6px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600 }}>
-                                🤝 Ref: {item.referredByAgentId.name}
-                              </div>
-                            )}
+                            {(() => {
+                              const refId =
+                                item.referredByAgentId?._id ||
+                                (typeof item.referredByAgentId === 'string' ? item.referredByAgentId : null);
+                              const matchedAgent = (agents || []).find(
+                                (a) =>
+                                  (refId && (a._id === refId || a.userId === refId)) ||
+                                  (item.referralCodeUsed && a.agentCode === item.referralCodeUsed)
+                              );
+                              const agentLabel =
+                                item.referredByAgentId?.name ||
+                                matchedAgent?.name ||
+                                item.referralCodeUsed ||
+                                matchedAgent?.agentCode;
+                              if (!agentLabel) return null;
+                              return (
+                                <div style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 6px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600 }}>
+                                  🤝 Ref: {agentLabel}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                         {activeTab === 'agents' && (
@@ -653,21 +669,91 @@ export const VerificationQueueView = ({ queueData, onProcessVerification, isProc
                   </div>
                 </div>
 
-                {selectedUser.referredByAgentId && (
-                  <div style={{ marginTop: '14px', padding: '12px 14px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🤝 Field Agent Referral Attribution</span>
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px', color: 'var(--text-main)' }}>
-                      Onboarded by: {selectedUser.referredByAgentId.name} ({selectedUser.referredByAgentId.phone})
-                    </div>
-                    {selectedUser.referralCodeUsed && (
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Referral Code: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{selectedUser.referralCodeUsed}</span>
+                {(() => {
+                  const refId =
+                    selectedUser.referredByAgentId?._id ||
+                    (typeof selectedUser.referredByAgentId === 'string'
+                      ? selectedUser.referredByAgentId
+                      : null);
+                  const matchedAgent = (agents || []).find(
+                    (a) =>
+                      (refId && (a._id === refId || a.userId === refId)) ||
+                      (selectedUser.referralCodeUsed && a.agentCode === selectedUser.referralCodeUsed)
+                  );
+                  const agentName =
+                    selectedUser.referredByAgentId?.name ||
+                    matchedAgent?.name ||
+                    matchedAgent?.userId?.name;
+                  const agentPhone =
+                    selectedUser.referredByAgentId?.phone ||
+                    matchedAgent?.phone ||
+                    matchedAgent?.userId?.phone;
+                  const referralCode =
+                    selectedUser.referralCodeUsed ||
+                    matchedAgent?.agentCode;
+
+                  if (!selectedUser.referredByAgentId && !selectedUser.referralCodeUsed && !matchedAgent) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      style={{
+                        marginTop: '14px',
+                        padding: '12px 14px',
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          color: '#059669',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>🤝 Field Agent Referral Attribution</span>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          marginTop: '4px',
+                          color: 'var(--text-main)',
+                        }}
+                      >
+                        Onboarded by: <strong>{agentName || 'Field Agent'}</strong>{' '}
+                        {agentPhone ? `(${agentPhone})` : ''}
+                      </div>
+                      {referralCode && (
+                        <div
+                          style={{
+                            fontSize: '11.5px',
+                            color: 'var(--text-muted)',
+                            marginTop: '2px',
+                          }}
+                        >
+                          Referral Code:{' '}
+                          <span
+                            style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 700,
+                              color: 'var(--primary)',
+                            }}
+                          >
+                            {referralCode}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

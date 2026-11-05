@@ -413,6 +413,7 @@ const AdminApp = () => {
           {currentView === 'verification' && (
             <VerificationQueueView
               queueData={queueData}
+              agents={agents}
               onProcessVerification={handleProcessVerification}
               isProcessing={isProcessing}
             />
