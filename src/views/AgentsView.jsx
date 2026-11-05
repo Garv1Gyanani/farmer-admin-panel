@@ -38,6 +38,10 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
+  const [selectedAgentForCredit, setSelectedAgentForCredit] = useState(null);
+  const [creditForm, setCreditForm] = useState({ amount: '', description: 'Agent Commission / Performance Bonus' });
+  const [quickVillageInput, setQuickVillageInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [villageSearchInput, setVillageSearchInput] = useState('');
 
@@ -186,6 +190,86 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
     }
   };
 
+  const handleQuickAddAreaToAgent = async (agent, newVillageName) => {
+    const trimmed = (newVillageName || '').trim();
+    if (!trimmed) return;
+    const existingVillages = agent.coverageClusters?.map((c) => c.villageName) || [];
+    if (existingVillages.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
+      alert(`Village "${trimmed}" is already assigned to ${agent.name}.`);
+      return;
+    }
+    const updatedList = [...existingVillages, trimmed];
+    setIsProcessing(true);
+    try {
+      await apiFetch(`/api/admin/agents/${agent._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          villages: updatedList,
+          district: agent.coverageClusters?.[0]?.district || agentForm.district || 'Jaipur',
+        }),
+      });
+      const updatedClusters = [
+        ...(agent.coverageClusters || []),
+        { _id: `temp-${Date.now()}`, villageName: trimmed, district: agent.coverageClusters?.[0]?.district || 'Jaipur', isVisited: false, farmerCount: 0 },
+      ];
+      setSelectedAgent({ ...agent, coverageClusters: updatedClusters });
+      setQuickVillageInput('');
+      if (onRefreshData) await onRefreshData();
+    } catch (err) {
+      alert(`Failed to allocate area: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleQuickRemoveAreaFromAgent = async (agent, villageNameToRemove) => {
+    if (!window.confirm(`Are you sure you want to de-allocate "${villageNameToRemove}" from ${agent.name}?`)) return;
+    const updatedList = (agent.coverageClusters?.map((c) => c.villageName) || [])
+      .filter((v) => v.toLowerCase() !== villageNameToRemove.toLowerCase());
+    setIsProcessing(true);
+    try {
+      await apiFetch(`/api/admin/agents/${agent._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          villages: updatedList,
+          district: agent.coverageClusters?.[0]?.district || 'Jaipur',
+        }),
+      });
+      const updatedClusters = (agent.coverageClusters || [])
+        .filter((c) => c.villageName.toLowerCase() !== villageNameToRemove.toLowerCase());
+      setSelectedAgent({ ...agent, coverageClusters: updatedClusters });
+      if (onRefreshData) await onRefreshData();
+    } catch (err) {
+      alert(`Failed to remove area: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleOpenCredit = (a) => {
+    setSelectedAgentForCredit(a);
+    setCreditForm({ amount: '', description: 'Agent Performance Incentive' });
+    setIsCreditModalOpen(true);
+  };
+
+  const handleSubmitCredit = async (e) => {
+    e.preventDefault();
+    if (!selectedAgentForCredit) return;
+    setIsProcessing(true);
+    try {
+      await apiFetch(`/api/admin/agents/${selectedAgentForCredit._id}/wallet/credit`, {
+        method: 'POST',
+        body: JSON.stringify(creditForm),
+      });
+      setIsCreditModalOpen(false);
+      if (onRefreshData) await onRefreshData();
+    } catch (err) {
+      alert(`Credit failed: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const filteredAgents = agents.filter((a) => {
     const q = search.toLowerCase().trim();
     if (!q) {
@@ -301,9 +385,19 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
                     <span style={{ fontFamily: 'var(--font-mono)' }}>{a.phone}</span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px' }}>
-                      <MapPin size={13} color="#16a34a" />
-                      <span>{a.coverageClusters?.length || 0} Assigned Villages</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px' }}>
+                        <MapPin size={13} color="#16a34a" />
+                        <span>{a.coverageClusters?.length || 0} Villages</span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedAgent(a)}
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: '2px 6px', fontSize: '11px', color: '#16a34a', fontWeight: 600 }}
+                        title="Add more villages / areas"
+                      >
+                        + Add Area
+                      </button>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                       {a.coverageClusters?.map((c) => c.villageName).slice(0, 2).join(', ')}
@@ -317,9 +411,27 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
                     </div>
                   </td>
                   <td>
-                    <span style={{ fontWeight: 700, color: '#1b5e20' }}>
+                    <div style={{ fontWeight: 700, color: '#1b5e20', fontSize: '14px' }}>
                       ₹{(a.availableCommission || 0).toLocaleString()}
-                    </span>
+                    </div>
+                    <div style={{ marginTop: '2px' }}>
+                      <button
+                        onClick={() => handleOpenCredit(a)}
+                        style={{
+                          background: '#f0fdf4',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '4px',
+                          color: '#166534',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          cursor: 'pointer',
+                        }}
+                        title="Credit manual commission bonus or adjustment"
+                      >
+                        + Credit Wallet
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -471,40 +583,97 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
 
             {/* Coverage Clusters */}
             <div>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={16} />
-                <span>Assigned Territory Villages ({selectedAgent.coverageClusters?.length || 0})</span>
-              </h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MapPin size={16} color="#16a34a" />
+                  <span>Assigned Territory Villages ({selectedAgent.coverageClusters?.length || 0})</span>
+                </h4>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  District: <strong>{selectedAgent.coverageClusters?.[0]?.district || 'Jaipur'}</strong>
+                </span>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedAgent.coverageClusters?.map((c) => (
                   <div
-                    key={c._id}
+                    key={c._id || c.villageName}
                     style={{
                       border: '1px solid var(--border-color)',
                       padding: '10px 14px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       fontSize: '13px',
+                      backgroundColor: '#ffffff',
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600 }}>{c.villageName}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.villageName}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Tehsil: {c.tehsil || 'Nabha'} • District: {c.district || 'Patiala'}
+                        Cluster District: {c.district || selectedAgent.coverageClusters?.[0]?.district || 'Jaipur'}
                       </div>
                     </div>
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span
                         className="status-pill active"
                         style={{ fontSize: '11px', padding: '2px 8px' }}
                       >
-                        {c.isVisited ? 'Visited' : 'Active Cluster'}
+                        {c.isVisited || c.visited ? 'Visited' : 'Active Cluster'}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickRemoveAreaFromAgent(selectedAgent, c.villageName)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#dc2626',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: '4px',
+                        }}
+                        title={`De-allocate ${c.villageName}`}
+                      >
+                        <X size={15} />
+                      </button>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Fast Inline Area Allocator */}
+              <div style={{ marginTop: '14px', padding: '12px', background: '#f0fdf4', borderRadius: '10px', border: '1px dashed #86efac' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#166534', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Plus size={14} color="#16a34a" />
+                  <span>Assign More Areas / Villages to {selectedAgent.name}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <GooglePlacesAutocomplete
+                      placeholder={`Search village, tehsil or locality to add...`}
+                      value={quickVillageInput}
+                      onChange={(val) => setQuickVillageInput(val)}
+                      onSelect={(place) => {
+                        const villageName = place.mainText || place.description.split(',')[0];
+                        handleQuickAddAreaToAgent(selectedAgent, villageName);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap', height: '42px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => {
+                      if (quickVillageInput.trim()) {
+                        handleQuickAddAreaToAgent(selectedAgent, quickVillageInput.trim());
+                      }
+                    }}
+                  >
+                    <Plus size={15} /> Allocate Area
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -939,6 +1108,59 @@ export const AgentsView = ({ agents = [], onToggleUserStatus, onRefreshData }) =
             </button>
             <button type="submit" disabled={isProcessing} className="btn btn-primary">
               {isProcessing ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Credit Agent Commission Wallet Modal */}
+      <Modal
+        isOpen={isCreditModalOpen}
+        onClose={() => setIsCreditModalOpen(false)}
+        title="Credit Agent Commission Wallet"
+      >
+        <form onSubmit={handleSubmitCredit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ background: '#f0fdf4', padding: '12px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+            <div style={{ fontSize: '12px', color: '#166534' }}>Target Field Agent</div>
+            <div style={{ fontWeight: 800, fontSize: '15px', color: '#14532d' }}>
+              {selectedAgentForCredit?.name} ({selectedAgentForCredit?.agentCode})
+            </div>
+            <div style={{ fontSize: '12px', color: '#15803d', marginTop: '3px' }}>
+              Current Commission Balance: <strong>₹{(selectedAgentForCredit?.availableCommission || 0).toLocaleString()}</strong>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Credit Amount (₹) *</label>
+            <input
+              type="number"
+              min="1"
+              required
+              placeholder="e.g. 5000"
+              className="form-control"
+              value={creditForm.amount}
+              onChange={(e) => setCreditForm({ ...creditForm, amount: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Credit Reason / Description *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Harvest season onboarding incentive / Commission adjustment"
+              className="form-control"
+              value={creditForm.description}
+              onChange={(e) => setCreditForm({ ...creditForm, description: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <button type="button" onClick={() => setIsCreditModalOpen(false)} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={isProcessing || !creditForm.amount} className="btn btn-primary">
+              {isProcessing ? 'Crediting...' : `Confirm Credit ₹${Number(creditForm.amount || 0).toLocaleString()}`}
             </button>
           </div>
         </form>
