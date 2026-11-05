@@ -587,8 +587,10 @@ export const BookingsView = ({ bookings = [] }) => {
                 </div>
                 <div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>AGENT COMMISSION</div>
-                  <div style={{ fontWeight: 700, color: '#b7791f' }}>
-                    ₹{selectedBooking.pricing?.agentCommissionAmount?.toLocaleString() || 0}
+                  <div style={{ fontWeight: 700, color: selectedBooking.agentId ? '#b7791f' : '#6b7280' }}>
+                    {selectedBooking.agentId
+                      ? `₹${(selectedBooking.pricing?.agentCommissionAmount || 0).toLocaleString()}`
+                      : '₹0 (Direct / No Agent)'}
                   </div>
                 </div>
               </div>
