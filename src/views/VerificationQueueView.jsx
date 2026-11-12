@@ -764,6 +764,28 @@ export const VerificationQueueView = ({ queueData, agents = [], onProcessVerific
                 <span>Submitted Verification Proofs ({selectedUser.kycDocuments?.length || 0})</span>
               </h4>
 
+              {activeTab === 'farmers' && (
+                <div
+                  style={{
+                    marginBottom: '12px',
+                    padding: '10px 14px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    color: '#065f46',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span style={{ fontSize: '15px' }}>ℹ️</span>
+                  <span>
+                    <strong>Verification Policy:</strong> Farmers are only required to submit an <strong>ID Card / Aadhaar</strong>. Property and land ownership documents are not required.
+                  </span>
+                </div>
+              )}
+
               {selectedUser.kycDocuments && selectedUser.kycDocuments.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {selectedUser.kycDocuments.map((doc, idx) => {

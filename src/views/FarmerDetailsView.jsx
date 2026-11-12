@@ -657,7 +657,7 @@ export const FarmerDetailsView = ({
                 </div>
               ) : (
                 <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                  Standard Aadhaar / Land record documents verified via field agent or digital OTP onboarding.
+                  Standard ID Card / Aadhaar document verified via digital onboarding or field agent intake. Property documents are not required.
                 </div>
               )}
             </div>
