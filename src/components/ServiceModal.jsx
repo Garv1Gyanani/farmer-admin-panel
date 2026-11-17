@@ -13,6 +13,9 @@ import {
   Sliders,
   ArrowLeft,
   Save,
+  Plus,
+  X,
+  Clock,
 } from 'lucide-react';
 import { apiUpload, resolveMediaUrl } from '../api';
 
@@ -87,6 +90,8 @@ export const ServiceModal = ({
 }) => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [customHourInput, setCustomHourInput] = useState('');
+  const [customExtInput, setCustomExtInput] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -97,6 +102,8 @@ export const ServiceModal = ({
     basePrice: 1000,
     minUnits: 1,
     availableHours: [],
+    hourPackages: [],
+    extensionOptions: [],
     horsepower: '',
     implementWidth: '',
     turnaroundTime: '',
@@ -116,6 +123,17 @@ export const ServiceModal = ({
 
   useEffect(() => {
     if (service) {
+      const existingPkgs = Array.isArray(service.hourPackages) && service.hourPackages.length > 0
+        ? service.hourPackages
+        : (Array.isArray(service.availableHours)
+            ? service.availableHours.map((h) => ({
+                hours: h,
+                label: '',
+                slotTime: '',
+                price: '',
+              }))
+            : []);
+
       setFormData({
         title: service.title || '',
         category: service.category?._id || service.category || categories[0]?._id || '',
@@ -125,6 +143,8 @@ export const ServiceModal = ({
         basePrice: service.basePrice || 0,
         minUnits: service.minUnits || 1,
         availableHours: Array.isArray(service.availableHours) ? service.availableHours : [],
+        hourPackages: existingPkgs,
+        extensionOptions: Array.isArray(service.extensionOptions) ? service.extensionOptions : [],
         horsepower: service.specifications?.horsepower || '',
         implementWidth: service.specifications?.implementWidth || '',
         turnaroundTime: service.specifications?.turnaroundTime || '',
@@ -151,6 +171,8 @@ export const ServiceModal = ({
         basePrice: 1000,
         minUnits: 1,
         availableHours: [],
+        hourPackages: [],
+        extensionOptions: [],
         horsepower: '',
         implementWidth: '',
         turnaroundTime: '',
@@ -204,6 +226,25 @@ export const ServiceModal = ({
       return;
     }
 
+    const cleanHourPackages = (formData.hourPackages || [])
+      .map((p) => ({
+        hours: Number(p.hours),
+        label: String(p.label || '').trim(),
+        slotTime: String(p.slotTime || '').trim(),
+        price: p.price !== '' && p.price !== null && p.price !== undefined ? Number(p.price) : null,
+      }))
+      .filter((p) => Number.isFinite(p.hours) && p.hours > 0)
+      .sort((a, b) => a.hours - b.hours);
+
+    const cleanExtOptions = (formData.extensionOptions || [])
+      .map((e) => ({
+        hours: Number(e.hours),
+        label: String(e.label || '').trim(),
+        price: e.price !== '' && e.price !== null && e.price !== undefined ? Number(e.price) : null,
+      }))
+      .filter((e) => Number.isFinite(e.hours) && e.hours > 0)
+      .sort((a, b) => a.hours - b.hours);
+
     const payload = {
       title: formData.title.trim(),
       category: formData.category,
@@ -212,7 +253,9 @@ export const ServiceModal = ({
       pricingModel: formData.pricingModel,
       basePrice: Number(formData.basePrice),
       minUnits: Number(formData.minUnits) || 1,
-      availableHours: formData.availableHours,
+      availableHours: cleanHourPackages.map((p) => p.hours),
+      hourPackages: cleanHourPackages,
+      extensionOptions: cleanExtOptions,
       specifications: {
         horsepower: formData.horsepower,
         implementWidth: formData.implementWidth,
@@ -474,28 +517,64 @@ export const ServiceModal = ({
               </div>
             </div>
 
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
-              <label style={labelStyle}>
-                Service Hours Options (Optional override — leave unselected to use Admin Global Hours)
-              </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Custom Service Hours & Packages */}
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>
+                  Custom Service Hours & Packages (Leave empty to use Admin Global Hours)
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    className="form-control"
+                    value={customHourInput}
+                    onChange={(e) => setCustomHourInput(e.target.value)}
+                    placeholder="Custom hrs (e.g. 5)"
+                    style={{ width: '130px', height: '32px', fontSize: '12px' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ height: '32px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => {
+                      const hrs = Number(customHourInput);
+                      if (!Number.isFinite(hrs) || hrs <= 0) return;
+                      const curr = formData.hourPackages || [];
+                      if (!curr.some((p) => Number(p.hours) === hrs)) {
+                        setFormData({
+                          ...formData,
+                          hourPackages: [...curr, { hours: hrs, label: '', slotTime: '', price: '' }].sort((a, b) => a.hours - b.hours),
+                        });
+                      }
+                      setCustomHourInput('');
+                    }}
+                  >
+                    <Plus size={13} /> Add Hours
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-add presets */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                 {[1, 2, 3, 4, 6, 8, 10, 12].map((hr) => {
-                  const selected = (formData.availableHours || []).includes(hr);
+                  const curr = formData.hourPackages || [];
+                  const selected = curr.some((p) => Number(p.hours) === hr);
                   return (
                     <button
                       type="button"
                       key={hr}
                       onClick={() => {
-                        const curr = formData.availableHours || [];
                         const next = selected
-                          ? curr.filter((x) => x !== hr)
-                          : [...curr, hr].sort((a, b) => a - b);
-                        setFormData({ ...formData, availableHours: next });
+                          ? curr.filter((p) => Number(p.hours) !== hr)
+                          : [...curr, { hours: hr, label: '', slotTime: '', price: '' }].sort((a, b) => a.hours - b.hours);
+                        setFormData({ ...formData, hourPackages: next });
                       }}
                       style={{
-                        padding: '5px 12px',
+                        padding: '4px 11px',
                         borderRadius: '20px',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         border: selected ? '1.5px solid var(--primary)' : '1px solid var(--border-light)',
@@ -503,11 +582,216 @@ export const ServiceModal = ({
                         color: selected ? 'var(--primary)' : 'var(--text-secondary)',
                       }}
                     >
-                      {selected ? '✓ ' : ''}{hr} {hr === 1 ? 'Hour' : 'Hours'}
+                      {selected ? '✓ ' : '+ '}{hr} {hr === 1 ? 'Hour' : 'Hours'}
                     </button>
                   );
                 })}
               </div>
+
+              {/* Editable Package Rows */}
+              {(formData.hourPackages || []).length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {formData.hourPackages.map((pkg, idx) => (
+                    <div
+                      key={`${pkg.hours}-${idx}`}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '78px 1.2fr 1.2fr 110px 30px',
+                        gap: '8px',
+                        alignItems: 'center',
+                        backgroundColor: '#f8faf7',
+                        border: '1px solid #dce8d6',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#02200c' }}>
+                        {pkg.hours} {Number(pkg.hours) === 1 ? 'Hr' : 'Hrs'}
+                      </div>
+                      <input
+                        type="text"
+                        className="form-control"
+                        style={{ height: '32px', fontSize: '12px' }}
+                        value={pkg.label || ''}
+                        placeholder={`e.g. Shift (${pkg.hours} Hrs)`}
+                        onChange={(e) => {
+                          const next = [...formData.hourPackages];
+                          next[idx] = { ...next[idx], label: e.target.value };
+                          setFormData({ ...formData, hourPackages: next });
+                        }}
+                      />
+                      <input
+                        type="text"
+                        className="form-control"
+                        style={{ height: '32px', fontSize: '12px' }}
+                        value={pkg.slotTime || ''}
+                        placeholder="Slot (e.g. 8 AM - 10 AM)"
+                        onChange={(e) => {
+                          const next = [...formData.hourPackages];
+                          next[idx] = { ...next[idx], slotTime: e.target.value };
+                          setFormData({ ...formData, hourPackages: next });
+                        }}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        style={{ height: '32px', fontSize: '12px' }}
+                        value={pkg.price ?? ''}
+                        placeholder={`Auto ₹${Math.round((Number(formData.basePrice) || 0) * Number(pkg.hours))}`}
+                        onChange={(e) => {
+                          const next = [...formData.hourPackages];
+                          next[idx] = { ...next[idx], price: e.target.value };
+                          setFormData({ ...formData, hourPackages: next });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = formData.hourPackages.filter((_, i) => i !== idx);
+                          setFormData({ ...formData, hourPackages: next });
+                        }}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px' }}
+                        title="Remove"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Custom Extended Timings */}
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock size={14} color="var(--primary)" />
+                  <span>Extended Timings (Optional per-service override — fallback is Global Extension Hours)</span>
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    className="form-control"
+                    value={customExtInput}
+                    onChange={(e) => setCustomExtInput(e.target.value)}
+                    placeholder="Ext hrs (e.g. 1.5)"
+                    style={{ width: '130px', height: '32px', fontSize: '12px' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ height: '32px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => {
+                      const hrs = Number(customExtInput);
+                      if (!Number.isFinite(hrs) || hrs <= 0) return;
+                      const curr = formData.extensionOptions || [];
+                      if (!curr.some((e) => Number(e.hours) === hrs)) {
+                        setFormData({
+                          ...formData,
+                          extensionOptions: [...curr, { hours: hrs, label: '', price: '' }].sort((a, b) => a.hours - b.hours),
+                        });
+                      }
+                      setCustomExtInput('');
+                    }}
+                  >
+                    <Plus size={13} /> Add Extended Time
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                {[0.5, 1, 2, 3, 4].map((hr) => {
+                  const curr = formData.extensionOptions || [];
+                  const selected = curr.some((e) => Number(e.hours) === hr);
+                  return (
+                    <button
+                      type="button"
+                      key={hr}
+                      onClick={() => {
+                        const next = selected
+                          ? curr.filter((e) => Number(e.hours) !== hr)
+                          : [...curr, { hours: hr, label: '', price: '' }].sort((a, b) => a.hours - b.hours);
+                        setFormData({ ...formData, extensionOptions: next });
+                      }}
+                      style={{
+                        padding: '4px 11px',
+                        borderRadius: '20px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: selected ? '1.5px solid #1d4ed8' : '1px solid var(--border-light)',
+                        backgroundColor: selected ? '#eff6ff' : '#ffffff',
+                        color: selected ? '#1d4ed8' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {selected ? '✓ ' : '+ '}+{hr} {hr === 1 ? 'Hr' : 'Hrs'}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(formData.extensionOptions || []).length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {formData.extensionOptions.map((ext, idx) => (
+                    <div
+                      key={`${ext.hours}-${idx}`}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '85px 1.6fr 120px 30px',
+                        gap: '8px',
+                        alignItems: 'center',
+                        backgroundColor: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, fontSize: '12.5px', color: '#1e3a8a' }}>
+                        +{ext.hours} {Number(ext.hours) === 1 ? 'Hr' : 'Hrs'}
+                      </div>
+                      <input
+                        type="text"
+                        className="form-control"
+                        style={{ height: '32px', fontSize: '12px' }}
+                        value={ext.label || ''}
+                        placeholder={`e.g. +${ext.hours} Hr Extension`}
+                        onChange={(e) => {
+                          const next = [...formData.extensionOptions];
+                          next[idx] = { ...next[idx], label: e.target.value };
+                          setFormData({ ...formData, extensionOptions: next });
+                        }}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        style={{ height: '32px', fontSize: '12px' }}
+                        value={ext.price ?? ''}
+                        placeholder={`Auto ₹${Math.round((Number(formData.basePrice) || 0) * Number(ext.hours))}`}
+                        onChange={(e) => {
+                          const next = [...formData.extensionOptions];
+                          next[idx] = { ...next[idx], price: e.target.value };
+                          setFormData({ ...formData, extensionOptions: next });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = formData.extensionOptions.filter((_, i) => i !== idx);
+                          setFormData({ ...formData, extensionOptions: next });
+                        }}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px' }}
+                        title="Remove"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
