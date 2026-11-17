@@ -32,8 +32,8 @@ import {
   ArrowRight,
   Eye,
   SlidersHorizontal,
+  ArrowLeft,
 } from 'lucide-react';
-import { Modal } from '../components/Modal';
 import { ServiceModal } from '../components/ServiceModal';
 import { apiUpload } from '../api';
 
@@ -245,8 +245,24 @@ export const CategoriesView = ({
   const totalServices = services.length;
   const avgServices = totalCategories > 0 ? (totalServices / totalCategories).toFixed(1) : 0;
 
+  if (isServiceModalOpen) {
+    return (
+      <ServiceModal
+        isOpen={isServiceModalOpen}
+        onClose={() => setIsServiceModalOpen(false)}
+        service={serviceToEdit}
+        categories={categories}
+        preselectedCategoryId={serviceModalTargetCategory}
+        onSave={onSaveService}
+        isProcessing={isProcessing}
+      />
+    );
+  }
+
   return (
     <div>
+      {!isCategoryModalOpen && (
+        <>
       {/* 1. Hero Header & Metric Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <div className="card" style={{ padding: '18px 20px', margin: 0, display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -874,13 +890,45 @@ export const CategoriesView = ({
         </div>
       )}
 
-      {/* 5. ADD / EDIT CATEGORY MODAL */}
-      <Modal
-        isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        title={selectedCategory ? `Edit Category: ${selectedCategory.name}` : 'Create New Agricultural Category'}
-        maxWidth="680px"
-      >
+        </>
+      )}
+
+      {/* 5. DEDICATED CATEGORY CREATE / UPDATE PAGE */}
+      {isCategoryModalOpen && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div
+            className="card"
+            style={{
+              padding: '18px 24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '16px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="btn btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <ArrowLeft size={16} />
+                <span>Back to Categories</span>
+              </button>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#02200c' }}>
+                  {selectedCategory ? `Edit Category: ${selectedCategory.name}` : 'Create New Agricultural Category'}
+                </h2>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Configure category metadata, equipment tags, theme icon, visibility, and cover photo.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: '24px' }}>
         <form onSubmit={handleSubmitCategory} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
             <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
@@ -1268,18 +1316,9 @@ export const CategoriesView = ({
             </button>
           </div>
         </form>
-      </Modal>
-
-      {/* 6. SHARED SERVICE MODAL (For adding/editing services directly from categories) */}
-      <ServiceModal
-        isOpen={isServiceModalOpen}
-        onClose={() => setIsServiceModalOpen(false)}
-        service={serviceToEdit}
-        categories={categories}
-        preselectedCategoryId={serviceModalTargetCategory}
-        onSave={onSaveService}
-        isProcessing={isProcessing}
-      />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

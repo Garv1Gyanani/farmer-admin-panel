@@ -16,8 +16,8 @@ import {
   Gauge,
   Sliders,
   CheckCircle2,
+  ArrowLeft,
 } from 'lucide-react';
-import { Modal } from './Modal';
 import { apiUpload } from '../api';
 
 const PRESET_IMAGES = [
@@ -224,13 +224,46 @@ export const ServiceModal = ({
   const currentCategory = categories.find((c) => c._id === formData.category);
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={service ? `Edit Service: ${service.title}` : 'Create New Service Offering'}
-      maxWidth="860px"
-    >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Dedicated Page Header */}
+      <div
+        className="card"
+        style={{
+          padding: '18px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <ArrowLeft size={16} />
+            <span>Back</span>
+          </button>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#02200c' }}>
+              {service ? `Edit Service: ${service.title}` : 'Create New Service Offering'}
+            </h2>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Configure service details, pricing, machine specifications, provider assignment, and preview.
+            </div>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+          Category: <strong style={{ color: 'var(--primary)' }}>{currentCategory?.name || 'Unassigned'}</strong>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '24px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Navigation Tabs Header */}
         <div
           style={{
@@ -906,6 +939,7 @@ export const ServiceModal = ({
           </div>
         </div>
       </form>
-    </Modal>
+      </div>
+    </div>
   );
 };

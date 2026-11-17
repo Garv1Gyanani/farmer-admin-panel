@@ -43,12 +43,26 @@ export const ServicesView = ({
 
   const getProviderInfo = (s) => {
     const pId = s.providerId?._id || s.providerId;
-    const pIdStr = pId?.toString();
+    const pIdStr = pId ? pId.toString() : '';
+
+    if (!pIdStr) {
+      return {
+        isAdminCreated: true,
+        name: 'Added by Admin',
+        phone: '',
+        enterpriseName: s.providerName || 'ProFarmer Platform Catalog',
+        contractorId: '',
+        kycStatus: '',
+        coverageRadiusKm: '',
+      };
+    }
+
     const found = providers.find(
-      (p) => p._id?.toString() === pIdStr || p.id?.toString() === pIdStr
+      (p) => (p._id && p._id.toString() === pIdStr) || (p.id && p.id.toString() === pIdStr)
     );
 
     return {
+      isAdminCreated: false,
       name: found?.name || s.providerId?.name || s.providerName || 'Registered Provider',
       phone: found?.phone || s.providerId?.phone || '',
       enterpriseName: found?.enterpriseName || '',
@@ -126,6 +140,19 @@ export const ServicesView = ({
     totalServices > 0
       ? Math.round(services.reduce((sum, s) => sum + (s.basePrice || 0), 0) / totalServices)
       : 0;
+
+  if (isModalOpen) {
+    return (
+      <ServiceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        service={selectedService}
+        categories={categories}
+        onSave={onSaveService}
+        isProcessing={isProcessing}
+      />
+    );
+  }
 
   return (
     <div>
@@ -507,69 +534,101 @@ export const ServicesView = ({
                   </p>
                 ) : null}
 
-                {/* WHICH PROVIDER LISTED IT - Prominent & Accurate Provider Details */}
+                {/* WHICH PROVIDER LISTED IT - Or Added by Admin */}
                 <div
                   style={{
-                    backgroundColor: '#f6fbf1',
-                    border: '1px solid #dce8d6',
+                    backgroundColor: provider.isAdminCreated ? '#f8fafc' : '#f6fbf1',
+                    border: `1px solid ${provider.isAdminCreated ? '#e2e8f0' : '#dce8d6'}`,
                     borderRadius: '10px',
                     padding: '12px 14px',
                     marginBottom: '14px',
                     fontSize: '12px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                    <div>
-                      <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800, color: '#15803d', marginBottom: '2px' }}>
-                        Listed by Service Provider
-                      </div>
-                      <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#02200c' }}>
-                        {provider.name}
-                      </div>
-                      {provider.enterpriseName && (
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534', marginTop: '1px' }}>
-                          🏢 {provider.enterpriseName}
+                  {provider.isAdminCreated ? (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800, color: '#0369a1', marginBottom: '2px' }}>
+                          Added by Admin
                         </div>
-                      )}
-                    </div>
-                    {provider.kycStatus && (
+                        <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0f172a' }}>
+                          {provider.enterpriseName}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Dispatched to online providers in this category
+                        </div>
+                      </div>
                       <span
                         style={{
-                          backgroundColor: provider.kycStatus === 'approved' ? '#dcfce7' : '#fef3c7',
-                          border: `1px solid ${provider.kycStatus === 'approved' ? '#86efac' : '#fde68a'}`,
+                          backgroundColor: '#e0f2fe',
+                          border: '1px solid #bae6fd',
                           padding: '3px 8px',
                           borderRadius: '6px',
                           fontSize: '10.5px',
                           fontWeight: 700,
-                          color: provider.kycStatus === 'approved' ? '#166534' : '#92400e',
+                          color: '#0369a1',
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        {provider.kycStatus === 'approved' ? '✓ KYC Approved' : 'KYC Pending'}
+                        Platform Catalog
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <div>
+                          <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800, color: '#15803d', marginBottom: '2px' }}>
+                            Listed by Service Provider
+                          </div>
+                          <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#02200c' }}>
+                            {provider.name}
+                          </div>
+                          {provider.enterpriseName && (
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534', marginTop: '1px' }}>
+                              🏢 {provider.enterpriseName}
+                            </div>
+                          )}
+                        </div>
+                        {provider.kycStatus && (
+                          <span
+                            style={{
+                              backgroundColor: provider.kycStatus === 'approved' ? '#dcfce7' : '#fef3c7',
+                              border: `1px solid ${provider.kycStatus === 'approved' ? '#86efac' : '#fde68a'}`,
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '10.5px',
+                              fontWeight: 700,
+                              color: provider.kycStatus === 'approved' ? '#166534' : '#92400e',
+                            }}
+                          >
+                            {provider.kycStatus === 'approved' ? '✓ KYC Approved' : 'KYC Pending'}
+                          </span>
+                        )}
+                      </div>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11.5px', color: 'var(--text-secondary)', paddingTop: '8px', borderTop: '1px solid #e2ece0' }}>
-                    {provider.phone && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                        <Phone size={12} color="var(--primary)" /> {provider.phone}
-                      </span>
-                    )}
-                    {provider.contractorId && (
-                      <span style={{ fontWeight: 600, color: '#02200c' }}>
-                        ID: {provider.contractorId}
-                      </span>
-                    )}
-                    {s.operatingArea ? (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <MapPin size={11} /> {s.operatingArea}
-                      </span>
-                    ) : provider.coverageRadiusKm ? (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <MapPin size={11} /> {provider.coverageRadiusKm} km radius
-                      </span>
-                    ) : null}
-                  </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11.5px', color: 'var(--text-secondary)', paddingTop: '8px', borderTop: '1px solid #e2ece0' }}>
+                        {provider.phone && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                            <Phone size={12} color="var(--primary)" /> {provider.phone}
+                          </span>
+                        )}
+                        {provider.contractorId && (
+                          <span style={{ fontWeight: 600, color: '#02200c' }}>
+                            ID: {provider.contractorId}
+                          </span>
+                        )}
+                        {s.operatingArea ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <MapPin size={11} /> {s.operatingArea}
+                          </span>
+                        ) : provider.coverageRadiusKm ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <MapPin size={11} /> {provider.coverageRadiusKm} km radius
+                          </span>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Technical Specifications - Only show what provider actually listed */}
@@ -756,15 +815,6 @@ export const ServicesView = ({
         </div>
       )}
 
-      {/* Modern Add / Edit Service Modal with Live Mobile Preview */}
-      <ServiceModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        service={selectedService}
-        categories={categories}
-        onSave={onSaveService}
-        isProcessing={isProcessing}
-      />
     </div>
   );
 };
