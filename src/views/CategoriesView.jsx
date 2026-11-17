@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FolderTree,
   Plus,
@@ -66,6 +66,9 @@ export const CategoriesView = ({
   onSaveService,
   onDeleteService,
   isProcessing,
+  routeAction = null,
+  routeId = null,
+  onNavigate = null,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
@@ -101,8 +104,50 @@ export const CategoriesView = ({
     }));
   };
 
+  // Sync URL hash sub-routes (#/categories/new, #/categories/edit/:id)
+  useEffect(() => {
+    if (routeAction === 'new') {
+      setSelectedCategory(null);
+      setCategoryFormData({
+        name: '',
+        description: '',
+        iconName: 'tractor',
+        imageUrl: CATEGORY_PRESET_IMAGES[0].url,
+        order: categories.length + 1,
+        isActive: true,
+        equipmentTags: [],
+      });
+      setNewTagInput('');
+      setUploadError('');
+      setIsCategoryModalOpen(true);
+    } else if (routeAction === 'edit' && routeId) {
+      const target = categories.find((c) => c._id === routeId);
+      if (target) {
+        setSelectedCategory(target);
+        setCategoryFormData({
+          name: target.name,
+          description: target.description || '',
+          iconName: target.iconName || 'tractor',
+          imageUrl: target.imageUrl || CATEGORY_PRESET_IMAGES[0].url,
+          order: target.order || 0,
+          isActive: target.isActive !== false,
+          equipmentTags: Array.isArray(target.equipmentTags) ? [...target.equipmentTags] : [],
+        });
+        setNewTagInput('');
+        setUploadError('');
+        setIsCategoryModalOpen(true);
+      }
+    } else if (!routeAction) {
+      setIsCategoryModalOpen(false);
+    }
+  }, [routeAction, routeId, categories]);
+
   // Open Modal for New Category
   const handleOpenAddCategory = () => {
+    if (onNavigate) {
+      onNavigate('/categories/new');
+      return;
+    }
     setSelectedCategory(null);
     setCategoryFormData({
       name: '',
@@ -120,6 +165,10 @@ export const CategoriesView = ({
 
   // Open Modal for Edit Category
   const handleOpenEditCategory = (cat) => {
+    if (onNavigate) {
+      onNavigate(`/categories/edit/${cat._id}`);
+      return;
+    }
     setSelectedCategory(cat);
     setCategoryFormData({
       name: cat.name,
@@ -133,6 +182,14 @@ export const CategoriesView = ({
     setNewTagInput('');
     setUploadError('');
     setIsCategoryModalOpen(true);
+  };
+
+  const handleCloseCategoryPage = () => {
+    if (onNavigate) {
+      onNavigate('/categories');
+    } else {
+      setIsCategoryModalOpen(false);
+    }
   };
 
   // Equipment Tag Handlers for Category Modal
@@ -200,7 +257,7 @@ export const CategoriesView = ({
     if (onSaveCategory) {
       await onSaveCategory(selectedCategory?._id, payload);
     }
-    setIsCategoryModalOpen(false);
+    handleCloseCategoryPage();
   };
 
   // Open Add Service directly under a Category
@@ -911,7 +968,7 @@ export const CategoriesView = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <button
                 type="button"
-                onClick={() => setIsCategoryModalOpen(false)}
+                onClick={handleCloseCategoryPage}
                 className="btn btn-secondary"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >

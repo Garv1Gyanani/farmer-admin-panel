@@ -33,6 +33,9 @@ export const ServicesView = ({
   onDeleteService,
   onReviewApproval,
   isProcessing = false,
+  routeAction = null,
+  routeId = null,
+  onNavigate = null,
 }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,14 +76,39 @@ export const ServicesView = ({
     };
   };
 
+  const isRouteFormOpen = routeAction === 'new' || routeAction === 'edit';
+  const effectiveFormOpen = onNavigate ? isRouteFormOpen : isModalOpen;
+  const effectiveService = onNavigate
+    ? (routeAction === 'edit' && routeId
+        ? services.find((s) => s._id === routeId) || selectedService
+        : null)
+    : selectedService;
+
   const handleOpenAdd = () => {
     setSelectedService(null);
-    setIsModalOpen(true);
+    if (onNavigate) {
+      onNavigate('/services/new');
+    } else {
+      setIsModalOpen(true);
+    }
   };
 
   const handleOpenEdit = (s) => {
     setSelectedService(s);
-    setIsModalOpen(true);
+    if (onNavigate) {
+      onNavigate(`/services/edit/${s._id}`);
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseForm = () => {
+    setSelectedService(null);
+    if (onNavigate) {
+      onNavigate('/services');
+    } else {
+      setIsModalOpen(false);
+    }
   };
 
   const handleApprove = (s) => {
@@ -142,12 +170,12 @@ export const ServicesView = ({
       ? Math.round(services.reduce((sum, s) => sum + (s.basePrice || 0), 0) / totalServices)
       : 0;
 
-  if (isModalOpen) {
+  if (effectiveFormOpen) {
     return (
       <ServiceModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        service={selectedService}
+        isOpen={effectiveFormOpen}
+        onClose={handleCloseForm}
+        service={effectiveService}
         categories={categories}
         preselectedCategoryId={selectedCategoryFilter !== 'all' ? selectedCategoryFilter : null}
         onSave={onSaveService}

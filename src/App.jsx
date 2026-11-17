@@ -20,13 +20,63 @@ import { AuditLogsView } from './views/AuditLogsView';
 import { LiveMapView } from './views/LiveMapView';
 import { AdminProfileModal } from './components/AdminProfileModal';
 
+const VALID_VIEWS = new Set([
+  'dashboard',
+  'live_map',
+  'verification',
+  'farmers',
+  'agents',
+  'referrals',
+  'providers',
+  'bookings',
+  'finance',
+  'services',
+  'categories',
+  'notifications',
+  'audit',
+]);
+
+const parseHashRoute = () => {
+  const rawHash = window.location.hash.replace(/^#\/?/, '').trim();
+  if (!rawHash) {
+    return { view: 'dashboard', subAction: null, targetId: null };
+  }
+  const parts = rawHash.split('/').filter(Boolean);
+  const view = VALID_VIEWS.has(parts[0]) ? parts[0] : 'dashboard';
+  const subAction = parts[1] || null;
+  const targetId = parts[2] || null;
+  return { view, subAction, targetId };
+};
+
 const AdminApp = () => {
   const { admin, loading } = useAuth();
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [route, setRoute] = useState(parseHashRoute);
+  const currentView = route.view;
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAdminProfileOpen, setIsAdminProfileOpen] = useState(false);
+
+  const navigateTo = useCallback((path) => {
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    const targetHash = `#${normalized}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    } else {
+      setRoute(parseHashRoute());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.replace('#/dashboard');
+    }
+    const handleHashChange = () => {
+      setRoute(parseHashRoute());
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // System Data Stores
   const [dashboardData, setDashboardData] = useState(null);
@@ -375,7 +425,7 @@ const AdminApp = () => {
       <Sidebar
         currentView={currentView}
         onViewChange={(view) => {
-          setCurrentView(view);
+          navigateTo(`/${view}`);
           setSearchQuery('');
         }}
         pendingQueueCount={pendingQueueCount}
@@ -399,7 +449,7 @@ const AdminApp = () => {
           {currentView === 'dashboard' && (
             <DashboardView
               data={dashboardData}
-              onNavigate={(v) => setCurrentView(v)}
+              onNavigate={(v) => navigateTo(`/${v}`)}
             />
           )}
 
@@ -484,6 +534,9 @@ const AdminApp = () => {
               onDeleteService={handleDeleteService}
               onReviewApproval={handleReviewServiceApproval}
               isProcessing={isProcessing}
+              routeAction={route.subAction}
+              routeId={route.targetId}
+              onNavigate={navigateTo}
             />
           )}
 
@@ -496,6 +549,9 @@ const AdminApp = () => {
               onSaveService={handleSaveService}
               onDeleteService={handleDeleteService}
               isProcessing={isProcessing}
+              routeAction={route.subAction}
+              routeId={route.targetId}
+              onNavigate={navigateTo}
             />
           )}
 

@@ -275,14 +275,14 @@ export const ServiceModal = ({
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button type="button" onClick={onClose} className="btn btn-secondary">
+          <button type="button" onClick={onClose} className="btn btn-secondary" style={{ height: '40px', padding: '0 18px' }}>
             Cancel
           </button>
           <button
             type="submit"
             disabled={isProcessing || isUploadingImage}
             className="btn btn-primary"
-            style={{ padding: '0 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            style={{ height: '40px', padding: '0 22px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Save size={15} />
             <span>{isProcessing ? 'Saving...' : service ? 'Update Service' : 'Create Service'}</span>
