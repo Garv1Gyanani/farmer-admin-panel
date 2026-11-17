@@ -18,15 +18,47 @@ import {
   Phone,
   Mail,
   Navigation,
+  UserPlus,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
-import { getAuthToken } from '../api';
+import { apiFetch, getAuthToken } from '../api';
 
-export const BookingsView = ({ bookings = [] }) => {
+export const BookingsView = ({ bookings = [], providers = [], onRefreshData }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [assignTarget, setAssignTarget] = useState(null);
+  const [selectedProviderId, setSelectedProviderId] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignFeedback, setAssignFeedback] = useState('');
+
+  const openAssignModal = (booking) => {
+    setAssignTarget(booking);
+    setSelectedProviderId(booking.providerId?._id || '');
+    setAssignFeedback('');
+  };
+
+  const handleAssignProvider = async () => {
+    if (!assignTarget || !selectedProviderId) return;
+    setIsAssigning(true);
+    setAssignFeedback('');
+    try {
+      const res = await apiFetch(`/api/admin/bookings/${assignTarget._id}/assign-provider`, {
+        method: 'PUT',
+        body: JSON.stringify({ providerId: selectedProviderId }),
+      });
+      if (res?.booking && selectedBooking?._id === assignTarget._id) {
+        setSelectedBooking(res.booking);
+      }
+      setAssignTarget(null);
+      if (onRefreshData) await onRefreshData();
+    } catch (err) {
+      setAssignFeedback(err.message || 'Failed to assign provider.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   const downloadPdf = async (bookingId, type, bookingNumber) => {
     try {
@@ -208,6 +240,17 @@ export const BookingsView = ({ bookings = [] }) => {
                         <span>Details</span>
                       </button>
 
+                      {(b.status === 'pending_broadcast' || b.status === 'assigned') && (
+                        <button
+                          onClick={() => openAssignModal(b)}
+                          className="btn btn-primary btn-sm"
+                          title={b.providerId ? 'Reassign Service Provider' : 'Assign Service Provider'}
+                        >
+                          <UserPlus size={13} />
+                          <span>{b.providerId ? 'Reassign' : 'Assign'}</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => downloadPdf(b._id, 'invoice', b.bookingNumber)}
                         className="btn btn-secondary btn-sm"
@@ -267,6 +310,16 @@ export const BookingsView = ({ bookings = [] }) => {
                   >
                     <FileCheck size={14} color="#16a34a" />
                     <span>Download Work Certificate (PDF)</span>
+                  </button>
+                )}
+
+                {(selectedBooking.status === 'pending_broadcast' || selectedBooking.status === 'assigned') && (
+                  <button
+                    onClick={() => openAssignModal(selectedBooking)}
+                    className="btn btn-primary btn-sm"
+                  >
+                    <UserPlus size={14} />
+                    <span>{selectedBooking.providerId ? 'Reassign Provider' : 'Assign Provider'}</span>
                   </button>
                 )}
               </div>
@@ -660,6 +713,77 @@ export const BookingsView = ({ bookings = [] }) => {
                 ))}
               </div>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Admin Assign / Reassign Service Provider Modal */}
+      {assignTarget && (
+        <Modal
+          isOpen={Boolean(assignTarget)}
+          onClose={() => !isAssigning && setAssignTarget(null)}
+          title={`Assign Service Provider — ${assignTarget.bookingNumber}`}
+          maxWidth="540px"
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', width: '100%' }}>
+              <button
+                onClick={() => setAssignTarget(null)}
+                className="btn btn-secondary"
+                disabled={isAssigning}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignProvider}
+                className="btn btn-primary"
+                disabled={isAssigning || !selectedProviderId}
+              >
+                {isAssigning ? 'Assigning...' : 'Confirm & Notify Provider'}
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ backgroundColor: '#f6fbf1', border: '1px solid #d4edd6', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#02200c' }}>
+                {assignTarget.serviceId?.title || 'Agri Service'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                Farmer: {assignTarget.farmerId?.name} • {assignTarget.parcelDetails?.village || 'Area'} • ₹{assignTarget.pricing?.totalAmount?.toLocaleString()}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, marginBottom: '6px' }}>
+                Select Service Provider *
+              </label>
+              <select
+                className="form-control"
+                value={selectedProviderId}
+                onChange={(e) => setSelectedProviderId(e.target.value)}
+              >
+                <option value="">-- Choose a registered provider --</option>
+                {providers.map((p) => {
+                  const uid = p._id || p.userId;
+                  const onlineLabel = p.isOnline ? '🟢 Online' : '⚫ Offline';
+                  const catLabel = p.primaryCategory || 'General';
+                  return (
+                    <option key={uid} value={uid}>
+                      {p.name} ({p.phone}) • {catLabel} • {onlineLabel}
+                    </option>
+                  );
+                })}
+              </select>
+              <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                The selected provider will immediately receive an in-app job assignment, live update, and push notification.
+              </div>
+            </div>
+
+            {assignFeedback && (
+              <div style={{ color: '#dc2626', fontSize: '12.5px', fontWeight: 600 }}>
+                {assignFeedback}
+              </div>
+            )}
           </div>
         </Modal>
       )}

@@ -460,6 +460,8 @@ const AdminApp = () => {
           {currentView === 'bookings' && (
             <BookingsView
               bookings={bookings}
+              providers={providers}
+              onRefreshData={fetchAllData}
             />
           )}
 
