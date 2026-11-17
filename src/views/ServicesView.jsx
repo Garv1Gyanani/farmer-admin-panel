@@ -148,6 +148,7 @@ export const ServicesView = ({
         onClose={() => setIsModalOpen(false)}
         service={selectedService}
         categories={categories}
+        preselectedCategoryId={categoryFilter !== 'all' ? categoryFilter : null}
         onSave={onSaveService}
         isProcessing={isProcessing}
       />
@@ -274,7 +275,7 @@ export const ServicesView = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', width: '260px' }}>
               <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
@@ -298,6 +299,16 @@ export const ServicesView = ({
               <option value="price_desc">Price: High to Low</option>
               <option value="rating">Highest Rated</option>
             </select>
+
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="btn btn-primary"
+              style={{ height: '38px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700, padding: '0 16px' }}
+            >
+              <Plus size={16} />
+              <span>Create New Service</span>
+            </button>
           </div>
         </div>
 
