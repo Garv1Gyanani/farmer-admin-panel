@@ -66,6 +66,7 @@ export const Sidebar = ({
     { id: 'categories', label: 'Service Categories', icon: FolderTree },
     { id: 'notifications', label: 'Push Notifications', icon: Bell },
     { id: 'audit', label: 'Audit Logs', icon: ScrollText },
+    { id: 'settings', label: 'Global Settings', icon: Settings },
   ];
 
   return (

@@ -17,6 +17,7 @@ import { CategoriesView } from './views/CategoriesView';
 import { NotificationsView } from './views/NotificationsView';
 import { ReferralsView } from './views/ReferralsView';
 import { AuditLogsView } from './views/AuditLogsView';
+import { SettingsView } from './views/SettingsView';
 import { LiveMapView } from './views/LiveMapView';
 import { AdminProfileModal } from './components/AdminProfileModal';
 
@@ -34,6 +35,7 @@ const VALID_VIEWS = new Set([
   'categories',
   'notifications',
   'audit',
+  'settings',
 ]);
 
 const parseHashRoute = () => {
@@ -408,6 +410,8 @@ const AdminApp = () => {
         return 'Push Notification Dispatcher';
       case 'audit':
         return 'Administrative Audit Trail';
+      case 'settings':
+        return 'Global Platform Settings';
       default:
         return 'ProFarmer Console';
     }
@@ -563,6 +567,10 @@ const AdminApp = () => {
             <AuditLogsView
               logs={auditLogs}
             />
+          )}
+
+          {currentView === 'settings' && (
+            <SettingsView />
           )}
         </main>
       </div>
