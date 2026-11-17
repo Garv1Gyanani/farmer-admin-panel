@@ -149,7 +149,7 @@ export const ServicesView = ({
         onClose={() => setIsModalOpen(false)}
         service={selectedService}
         categories={categories}
-        preselectedCategoryId={categoryFilter !== 'all' ? categoryFilter : null}
+        preselectedCategoryId={selectedCategoryFilter !== 'all' ? selectedCategoryFilter : null}
         onSave={onSaveService}
         isProcessing={isProcessing}
       />
