@@ -93,9 +93,10 @@ export const ServiceModal = ({
     category: '',
     description: '',
     machineryType: 'Tractor 4WD',
-    pricingModel: 'per_acre',
+    pricingModel: 'per_hour',
     basePrice: 1000,
     minUnits: 1,
+    availableHours: [],
     horsepower: '',
     implementWidth: '',
     turnaroundTime: '',
@@ -120,9 +121,10 @@ export const ServiceModal = ({
         category: service.category?._id || service.category || categories[0]?._id || '',
         description: service.description || '',
         machineryType: service.machineryType || '',
-        pricingModel: service.pricingModel || 'per_acre',
+        pricingModel: service.pricingModel || 'per_hour',
         basePrice: service.basePrice || 0,
         minUnits: service.minUnits || 1,
+        availableHours: Array.isArray(service.availableHours) ? service.availableHours : [],
         horsepower: service.specifications?.horsepower || '',
         implementWidth: service.specifications?.implementWidth || '',
         turnaroundTime: service.specifications?.turnaroundTime || '',
@@ -145,9 +147,10 @@ export const ServiceModal = ({
         category: preselectedCategoryId || categories[0]?._id || '',
         description: '',
         machineryType: 'Tractor 4WD',
-        pricingModel: 'per_acre',
+        pricingModel: 'per_hour',
         basePrice: 1000,
         minUnits: 1,
+        availableHours: [],
         horsepower: '',
         implementWidth: '',
         turnaroundTime: '',
@@ -209,6 +212,7 @@ export const ServiceModal = ({
       pricingModel: formData.pricingModel,
       basePrice: Number(formData.basePrice),
       minUnits: Number(formData.minUnits) || 1,
+      availableHours: formData.availableHours,
       specifications: {
         horsepower: formData.horsepower,
         implementWidth: formData.implementWidth,
@@ -467,6 +471,42 @@ export const ServiceModal = ({
                   value={formData.minUnits}
                   onChange={(e) => setFormData({ ...formData, minUnits: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
+              <label style={labelStyle}>
+                Service Hours Options (Optional override — leave unselected to use Admin Global Hours)
+              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[1, 2, 3, 4, 6, 8, 10, 12].map((hr) => {
+                  const selected = (formData.availableHours || []).includes(hr);
+                  return (
+                    <button
+                      type="button"
+                      key={hr}
+                      onClick={() => {
+                        const curr = formData.availableHours || [];
+                        const next = selected
+                          ? curr.filter((x) => x !== hr)
+                          : [...curr, hr].sort((a, b) => a - b);
+                        setFormData({ ...formData, availableHours: next });
+                      }}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: selected ? '1.5px solid var(--primary)' : '1px solid var(--border-light)',
+                        backgroundColor: selected ? '#f0fdf4' : '#ffffff',
+                        color: selected ? 'var(--primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {selected ? '✓ ' : ''}{hr} {hr === 1 ? 'Hour' : 'Hours'}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layers,
   Plus,
@@ -21,9 +21,10 @@ import {
   ShieldCheck,
   XCircle,
   Building,
+  X,
 } from 'lucide-react';
 import { ServiceModal } from '../components/ServiceModal';
-import { resolveMediaUrl } from '../api';
+import { apiFetch, resolveMediaUrl } from '../api';
 
 export const ServicesView = ({
   services = [],
@@ -44,6 +45,70 @@ export const ServicesView = ({
   const [approvalFilter, setApprovalFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'price_asc' | 'price_desc' | 'rating'
+
+  // Admin Booking Hours & Payment Policy Configuration
+  const [bookingConfig, setBookingConfig] = useState({
+    bookingHoursOptions: [2, 4, 6, 8],
+    extensionHoursOptions: [1, 2, 4],
+    collectPaymentBeforeService: false,
+  });
+  const [newBookingHour, setNewBookingHour] = useState('');
+  const [newExtHour, setNewExtHour] = useState('');
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [configMsg, setConfigMsg] = useState('');
+
+  useEffect(() => {
+    apiFetch('/api/admin/settings/booking-config')
+      .then((res) => {
+        if (res?.config) {
+          setBookingConfig((prev) => ({ ...prev, ...res.config }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveBookingConfig = async (nextConfig = bookingConfig) => {
+    setIsSavingConfig(true);
+    setConfigMsg('');
+    try {
+      const res = await apiFetch('/api/admin/settings/booking-config', {
+        method: 'PUT',
+        body: JSON.stringify(nextConfig),
+      });
+      if (res?.config) {
+        setBookingConfig(res.config);
+      }
+      setConfigMsg('Saved!');
+      setTimeout(() => setConfigMsg(''), 2500);
+    } catch (err) {
+      setConfigMsg(err.message || 'Save failed');
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const addHourOption = (key, val, setter) => {
+    const num = Number(val);
+    if (!Number.isFinite(num) || num <= 0) return;
+    if (bookingConfig[key].includes(num)) {
+      setter('');
+      return;
+    }
+    const updated = {
+      ...bookingConfig,
+      [key]: [...bookingConfig[key], num].sort((a, b) => a - b),
+    };
+    setBookingConfig(updated);
+    setter('');
+  };
+
+  const removeHourOption = (key, num) => {
+    if (bookingConfig[key].length <= 1) return;
+    setBookingConfig({
+      ...bookingConfig,
+      [key]: bookingConfig[key].filter((h) => h !== num),
+    });
+  };
 
   const getProviderInfo = (s) => {
     const pId = s.providerId?._id || s.providerId;
@@ -288,6 +353,167 @@ export const ServicesView = ({
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Avg Benchmark Rate</div>
             <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>₹{avgPrice}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 1b. Admin Booking Hours & Payment Policy Configuration */}
+      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px', backgroundColor: '#f8faf7', border: '1px solid #d4edd6' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#02200c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={15} color="var(--primary)" />
+              <span>Admin Booking Hours & Payment Settings</span>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Configure selectable booking hour packages, extension hours, and advance payment requirement for Farmer App.
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {configMsg && (
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#16a34a' }}>{configMsg}</span>
+            )}
+            <button
+              type="button"
+              onClick={() => handleSaveBookingConfig()}
+              disabled={isSavingConfig}
+              className="btn btn-primary btn-sm"
+              style={{ height: '34px', padding: '0 14px', fontWeight: 700 }}
+            >
+              {isSavingConfig ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+          {/* Booking Hours Options */}
+          <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#02200c', marginBottom: '8px' }}>
+              Selectable Booking Hours (Farmer App)
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              {(bookingConfig.bookingHoursOptions || []).map((hr) => (
+                <span
+                  key={hr}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: '#e8f5e4',
+                    color: '#0e3d16',
+                    padding: '3px 9px',
+                    borderRadius: '16px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {hr} {hr === 1 ? 'Hr' : 'Hrs'}
+                  <button
+                    type="button"
+                    onClick={() => removeHourOption('bookingHoursOptions', hr)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, display: 'flex' }}
+                    title="Remove"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="number"
+                min="1"
+                className="form-control"
+                value={newBookingHour}
+                onChange={(e) => setNewBookingHour(e.target.value)}
+                placeholder="Add hrs (e.g. 2, 10)"
+                style={{ height: '32px', fontSize: '12px' }}
+              />
+              <button
+                type="button"
+                onClick={() => addHourOption('bookingHoursOptions', newBookingHour, setNewBookingHour)}
+                className="btn btn-secondary btn-sm"
+                style={{ height: '32px' }}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
+
+          {/* Extension Hours Options */}
+          <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#02200c', marginBottom: '8px' }}>
+              Service Extension Time Options
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              {(bookingConfig.extensionHoursOptions || []).map((hr) => (
+                <span
+                  key={hr}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: '#eff6ff',
+                    color: '#1d4ed8',
+                    padding: '3px 9px',
+                    borderRadius: '16px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                  }}
+                >
+                  +{hr} {hr === 1 ? 'Hr' : 'Hrs'}
+                  <button
+                    type="button"
+                    onClick={() => removeHourOption('extensionHoursOptions', hr)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc2626', padding: 0, display: 'flex' }}
+                    title="Remove"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="number"
+                min="1"
+                className="form-control"
+                value={newExtHour}
+                onChange={(e) => setNewExtHour(e.target.value)}
+                placeholder="Add ext hrs (e.g. 1, 3)"
+                style={{ height: '32px', fontSize: '12px' }}
+              />
+              <button
+                type="button"
+                onClick={() => addHourOption('extensionHoursOptions', newExtHour, setNewExtHour)}
+                className="btn btn-secondary btn-sm"
+                style={{ height: '32px' }}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
+
+          {/* Advance Payment Toggle */}
+          <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#02200c', marginBottom: '4px' }}>
+                Payment Collection Policy
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                Require upfront payment before service dispatch (disables Pay After Service).
+              </div>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: bookingConfig.collectPaymentBeforeService ? '#16a34a' : 'var(--text-secondary)' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(bookingConfig.collectPaymentBeforeService)}
+                onChange={(e) => setBookingConfig({ ...bookingConfig, collectPaymentBeforeService: e.target.checked })}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+              />
+              <span>Collect Payment Before Service</span>
+            </label>
           </div>
         </div>
       </div>
@@ -733,7 +959,27 @@ export const ServicesView = ({
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.45 }}>
                       Submitted by <strong>{provider.name}</strong> {provider.enterpriseName ? `(${provider.enterpriseName})` : ''}{provider.phone ? ` • ${provider.phone}` : ''}. Approving will publish this service live to all farmers.
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handleOpenEdit(s)}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          color: '#02200c',
+                          fontWeight: 700,
+                          border: '1px solid #cbd5e1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '5px',
+                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                        }}
+                      >
+                        <Edit2 size={13} />
+                        Verify / Edit Price
+                      </button>
                       <button
                         onClick={() => handleApprove(s)}
                         className="btn btn-sm"
