@@ -51,6 +51,7 @@ export const ServicesView = ({
     bookingHoursOptions: [2, 4, 6, 8],
     extensionHoursOptions: [1, 2, 4],
     collectPaymentBeforeService: false,
+    broadcastToAllProviders: false,
   });
   const [newBookingHour, setNewBookingHour] = useState('');
   const [newExtHour, setNewExtHour] = useState('');
@@ -505,7 +506,7 @@ export const ServicesView = ({
                 Require upfront payment before service dispatch (disables Pay After Service).
               </div>
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: bookingConfig.collectPaymentBeforeService ? '#16a34a' : 'var(--text-secondary)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: bookingConfig.collectPaymentBeforeService ? '#16a34a' : 'var(--text-secondary)', marginBottom: '10px' }}>
               <input
                 type="checkbox"
                 checked={Boolean(bookingConfig.collectPaymentBeforeService)}
@@ -514,6 +515,23 @@ export const ServicesView = ({
               />
               <span>Collect Payment Before Service</span>
             </label>
+            <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#02200c', marginBottom: '2px' }}>
+                Dispatch Visibility (Category Filter)
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                When ON, all online providers receive pending dispatches regardless of primaryCategory.
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: bookingConfig.broadcastToAllProviders ? '#16a34a' : 'var(--text-secondary)' }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(bookingConfig.broadcastToAllProviders)}
+                  onChange={(e) => setBookingConfig({ ...bookingConfig, broadcastToAllProviders: e.target.checked })}
+                  style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                />
+                <span>Broadcast Dispatches to All Online Providers</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
