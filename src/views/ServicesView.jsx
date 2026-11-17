@@ -23,6 +23,7 @@ import {
   Building,
 } from 'lucide-react';
 import { ServiceModal } from '../components/ServiceModal';
+import { resolveMediaUrl } from '../api';
 
 export const ServicesView = ({
   services = [],
@@ -403,7 +404,7 @@ export const ServicesView = ({
               <div style={{ height: '180px', width: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#02200c' }}>
                 {s.imageUrl ? (
                   <img
-                    src={s.imageUrl}
+                    src={resolveMediaUrl(s.imageUrl)}
                     alt={s.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

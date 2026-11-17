@@ -78,3 +78,17 @@ export const apiUpload = async (endpoint, formData) => {
   return data;
 };
 
+export const PUBLIC_API_URL = 'https://apiagritech.divanex.in';
+
+export const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/i.test(trimmed)) {
+    return trimmed.replace(/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/i, PUBLIC_API_URL);
+  }
+  if (trimmed.startsWith('/uploads')) {
+    return `${PUBLIC_API_URL}${trimmed}`;
+  }
+  return trimmed;
+};
+

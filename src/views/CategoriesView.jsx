@@ -35,7 +35,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { ServiceModal } from '../components/ServiceModal';
-import { apiUpload } from '../api';
+import { apiUpload, resolveMediaUrl } from '../api';
 
 const ICON_MAP = {
   tractor: { label: 'Tractor / Heavy Machinery', icon: Tractor, color: '#16a34a' },
@@ -168,8 +168,9 @@ export const CategoriesView = ({
       data.append('file', file);
       data.append('folder', 'categories');
       const res = await apiUpload('/api/upload', data);
-      if (res.fileUrl) {
-        setCategoryFormData((prev) => ({ ...prev, imageUrl: res.fileUrl }));
+      const uploadedUrl = resolveMediaUrl(res.fileUrl || res.relativeUrl || '');
+      if (uploadedUrl) {
+        setCategoryFormData((prev) => ({ ...prev, imageUrl: uploadedUrl }));
       }
     } catch (err) {
       setUploadError(err.message || 'Image upload to S3 failed');
@@ -493,7 +494,7 @@ export const CategoriesView = ({
                   }}
                 >
                   <img
-                    src={c.imageUrl || CATEGORY_PRESET_IMAGES[0].url}
+                    src={resolveMediaUrl(c.imageUrl) || CATEGORY_PRESET_IMAGES[0].url}
                     alt={c.name}
                     style={{
                       width: '100%',
@@ -824,7 +825,7 @@ export const CategoriesView = ({
                           }}
                         >
                           <img
-                            src={c.imageUrl || CATEGORY_PRESET_IMAGES[0].url}
+                            src={resolveMediaUrl(c.imageUrl) || CATEGORY_PRESET_IMAGES[0].url}
                             alt={c.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
@@ -1215,7 +1216,7 @@ export const CategoriesView = ({
               >
                 {categoryFormData.imageUrl ? (
                   <img
-                    src={categoryFormData.imageUrl}
+                    src={resolveMediaUrl(categoryFormData.imageUrl)}
                     alt="Category preview"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
