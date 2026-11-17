@@ -191,7 +191,7 @@ export const ServiceModal = ({
       });
     }
     setUploadError('');
-  }, [service, isOpen, preselectedCategoryId, categories]);
+  }, [service?._id, isOpen, preselectedCategoryId]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
