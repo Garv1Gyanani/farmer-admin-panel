@@ -52,7 +52,7 @@ const ICON_MAP = {
 const CATEGORY_PRESET_IMAGES = [
   { label: 'Land Prep', url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80' },
   { label: 'Sowing', url: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' },
-  { label: 'Drone Care', url: 'https://images.unsplash.com/photo-1527842891421-42eec6e703ea?auto=format&fit=crop&w=800&q=80' },
+  { label: 'Drone Care', url: 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=800&q=80' },
   { label: 'Harvesting', url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80' },
   { label: 'Transport', url: 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=800&q=80' },
   { label: 'Soil Lab', url: 'https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=800&q=80' },
@@ -1136,8 +1136,82 @@ export const CategoriesView = ({
 
           <div>
             <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-              Category Cover Photo (Cloud S3 or Presets)
+              Category Cover Photo (Upload Image File, URL, or Presets)
             </label>
+
+            {/* Upload File + Live Thumbnail Preview */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px dashed var(--border-medium)',
+                backgroundColor: '#f8fafc',
+                marginBottom: '10px',
+              }}
+            >
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  backgroundColor: '#e2e8f0',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {categoryFormData.imageUrl ? (
+                  <img
+                    src={categoryFormData.imageUrl}
+                    alt="Category preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <ImageIcon size={22} color="#64748b" />
+                )}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <label
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: isUploadingImage ? 'not-allowed' : 'pointer',
+                    opacity: isUploadingImage ? 0.7 : 1,
+                  }}
+                >
+                  <Upload size={14} />
+                  {isUploadingImage ? 'Uploading Image...' : 'Upload New Image File'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploadingImage}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Supports JPG, PNG, WebP. Uploaded directly to cloud storage.
+                </div>
+                {uploadError && (
+                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 600, marginTop: '2px' }}>
+                    {uploadError}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
               <input
@@ -1145,7 +1219,7 @@ export const CategoriesView = ({
                 className="form-control"
                 value={categoryFormData.imageUrl}
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, imageUrl: e.target.value })}
-                placeholder="https://..."
+                placeholder="Or paste image URL (https://...)"
                 style={{ height: '38px', fontSize: '12px' }}
               />
             </div>
